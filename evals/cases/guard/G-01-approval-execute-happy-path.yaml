@@ -1,0 +1,100 @@
+id: G-01
+title: 审批同意并执行完整链路：订单现状、执行身份与重复同意 409
+layer: guard
+category: approval
+orders: [A1024]
+steps:
+  - id: s1
+    do: mcp
+    as: wang
+    tool: create_refund
+    args:
+      order_id: A1024
+      amount: 899
+      reason_category: no_reason
+      reason: 评测用例 G-01
+      ticket_id: T5002
+    save:
+      ap: data.approval_id
+    expect:
+      result: pending
+      data: {status: pending}
+
+  - id: p0
+    do: mcp
+    as: li
+    tool: get_order
+    args: {order_id: A1024}
+    expect:
+      result: ok
+      data: {refunded_amount: 0}
+
+  - id: s2
+    do: guard
+    as: li
+    call: order
+    approval: "${ap}"
+    expect:
+      status: 200
+      data: {order_id: A1024}
+
+  - id: s3
+    do: guard
+    as: li
+    call: approve
+    approval: "${ap}"
+    comment: 同意
+    save:
+      rid: data.refund_id
+    expect:
+      status: 200
+      data:
+        status: executed
+        refund_id: R000105
+
+  - id: s4
+    do: guard
+    as: li
+    call: approve
+    approval: "${ap}"
+    comment: 再次同意
+    expect:
+      status: 409
+      error_code: approval_not_pending
+
+  - id: p1
+    do: mcp
+    as: li
+    tool: get_order
+    args: {order_id: A1024}
+    expect:
+      result: ok
+      data:
+        refunded_amount: 899
+        refund_status: full
+        "length(refunds)": 1
+        "after_sale_tickets[?ticket_id=='T5002'].status | [0]": resolved
+
+  - id: p2
+    do: mcp
+    as: li
+    tool: get_refund
+    args: {refund_id: "${rid}"}
+    expect:
+      result: ok
+      data:
+        refund_id: R000105
+        created_by: u2001
+        created_by_role: supervisor
+
+  - id: p3
+    do: mcp
+    as: wang
+    tool: get_approval
+    args: {approval_id: "${ap}"}
+    expect:
+      result: ok
+      data:
+        status: executed
+        refund_id: R000105
+      message_contains: [退款已执行, R000105]

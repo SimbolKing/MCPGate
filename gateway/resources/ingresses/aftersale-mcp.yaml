@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aftersale-mcp
+  namespace: higress-system
+  creationTimestamp: "2000-01-01T00:00:00Z"
+  resourceVersion: "1"
+  annotations:
+    higress.io/destination: guard.dns:8020
+    higress.io/proxy-next-upstream-tries: "0"
+spec:
+  ingressClassName: higress
+  rules:
+    - http:
+        paths:
+          - path: /aftersale/mcp
+            pathType: Exact
+            backend:
+              resource:
+                apiGroup: networking.higress.io
+                kind: McpBridge
+                name: default

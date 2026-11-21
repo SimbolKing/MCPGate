@@ -1,0 +1,16 @@
+id: D-13
+title: 制度场景：已发货满 7 天未收到货可仅退款（A1028）
+layer: dialogue
+category: policy
+orders: [A1028]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    query: 订单 A1028 的客户说一直没收到货，能退款吗？
+    expect:
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: A1028}]}
+        verdict: refundable
+        clauses: [{doc: 售后制度, clause: "3.6"}]
+        citations: [{doc: 售后制度, clause: "3.6"}]

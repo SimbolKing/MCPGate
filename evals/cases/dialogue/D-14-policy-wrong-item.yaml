@@ -1,0 +1,16 @@
+id: D-14
+title: 制度场景：发错货 15 天内可退（B2090）
+layer: dialogue
+category: policy
+orders: [B2090]
+steps:
+  - id: t1
+    do: chat
+    as: zhao
+    query: 订单 B2090 的客户说发错货了，能退吗？
+    expect:
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: B2090}]}
+        verdict: refundable
+        clauses: [{doc: 售后制度, clause: "3.4"}]
+        citations: [{doc: 售后制度, clause: "3.4"}]

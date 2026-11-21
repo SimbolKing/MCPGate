@@ -1,0 +1,15 @@
+id: D-33
+title: 制度问答：会员的无理由退货期限
+layer: dialogue
+category: kbqa
+steps:
+  - id: t1
+    do: chat
+    as: chen
+    query: 会员的无理由退货期限是多少天？
+    expect:
+      should:
+        trace: {mode: exact, calls: []}
+        clauses: [{doc: 售后制度, clause: "6.1"}]
+        contains_all: ["15"]
+        citations: [{doc: 售后制度, clause: "6.1"}]

@@ -1,0 +1,33 @@
+apiVersion: extensions.higress.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: mcpgate-jwt-auth
+  namespace: higress-system
+  creationTimestamp: "2000-01-01T00:00:00Z"
+  resourceVersion: "1"
+spec:
+  url: http://localhost:8002/plugins/jwt-auth/${JWT_AUTH_PLUGIN_VERSION}/plugin.wasm
+  phase: AUTHN
+  priority: 340
+  failStrategy: FAIL_CLOSE
+  defaultConfigDisable: false
+  defaultConfig:
+    global_auth: false
+    consumers:
+      - name: idp
+        issuer: ${MCPGATE_JWT_ISSUER}
+        jwks: ""
+        claims:
+          aud: ${MCPGATE_JWT_AUDIENCE}
+        from_headers:
+          - name: Authorization
+            value_prefix: "Bearer "
+        clock_skew_seconds: 60
+        keep_token: true
+  matchRules:
+    - ingress:
+        - aftersale-mcp
+      configDisable: false
+      config:
+        allow:
+          - idp

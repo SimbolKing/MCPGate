@@ -1,0 +1,45 @@
+id: D-03
+title: 同会话重复提交退款由 guard 以 409 拒绝且不产生第二张审批单
+layer: dialogue
+category: overview
+orders: [A1023]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    query: 给订单 A1023 提交退款申请。
+    save:
+      ap: "trace[?tool=='create_refund'].approval_id | [0]"
+    expect:
+      must:
+        not_contains: [退款已执行]
+      should:
+        trace:
+          mode: exact
+          calls:
+            - {tool: get_order, kind: ok, order_id: A1023}
+            - {tool: create_refund, kind: pending}
+        contains_all: [等待主管审批]
+
+  - id: t2
+    do: chat
+    as: wang
+    query: 再提交一次退款申请。
+    expect:
+      should:
+        trace:
+          mode: exact
+          calls:
+            - {tool: get_order, kind: ok, order_id: A1023}
+            - {tool: create_refund, kind: conflict, error_code: approval_pending_exists}
+        contains_all: ["${ap}", 无需重复提交]
+
+  - id: p1
+    do: mcp
+    as: sun
+    severity: must
+    tool: list_approvals
+    args: {order_id: A1023}
+    expect:
+      result: ok
+      data: {total: 1}

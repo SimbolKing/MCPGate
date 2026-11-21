@@ -1,0 +1,21 @@
+id: D-12
+title: 制度场景：大额质量问题可退并提示大额复核（A1033）
+layer: dialogue
+category: policy
+orders: [A1033]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    query: 订单 A1033 的客户要退货，怎么处理？
+    expect:
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: A1033}]}
+        verdict: refundable
+        clauses:
+          - {doc: 售后制度, clause: "3.2"}
+          - {doc: 售后制度, clause: "7.3"}
+        contains_all: [大额]
+        citations:
+          - {doc: 售后制度, clause: "3.2"}
+          - {doc: 售后制度, clause: "7.3"}

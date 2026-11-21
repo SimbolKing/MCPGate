@@ -1,0 +1,16 @@
+id: D-09
+title: 制度场景：生鲜食品不支持无理由退货（A1026）
+layer: dialogue
+category: policy
+orders: [A1026]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    query: 订单 A1026 能退吗？
+    expect:
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: A1026}]}
+        verdict: not_refundable
+        clauses: [{doc: 售后制度, clause: "4.1"}]
+        citations: [{doc: 售后制度, clause: "4.1"}]

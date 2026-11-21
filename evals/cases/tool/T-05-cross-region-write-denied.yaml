@@ -1,0 +1,80 @@
+id: T-05
+title: 客服与主管跨区域发起退款写调用被拒绝且无副作用
+layer: tool
+category: isolation
+orders: [B2087, A1023]
+steps:
+  - id: s1
+    do: mcp
+    as: wang
+    tool: create_refund
+    args:
+      order_id: B2087
+      amount: 100
+      reason_category: quality_issue
+      reason: 评测用例 T-05
+    authz: deny
+    target: B2087
+    expect:
+      result: denied
+      status: 403
+      error_code: order_access_denied
+
+  - id: s2
+    do: mcp
+    as: li
+    tool: create_refund
+    args:
+      order_id: B2087
+      amount: 100
+      reason_category: quality_issue
+      reason: 评测用例 T-05
+    authz: deny
+    target: B2087
+    expect:
+      result: denied
+      status: 403
+      error_code: order_access_denied
+
+  - id: s3
+    do: mcp
+    as: zhou
+    tool: create_refund
+    args:
+      order_id: A1023
+      amount: 100
+      reason_category: quality_issue
+      reason: 评测用例 T-05
+    authz: deny
+    target: A1023
+    expect:
+      result: denied
+      status: 403
+      error_code: order_access_denied
+
+  - id: p1
+    do: mcp
+    as: sun
+    tool: list_approvals
+    args: {order_id: B2087}
+    expect:
+      result: ok
+      data: {total: 0}
+
+  - id: p2
+    do: mcp
+    as: sun
+    tool: list_approvals
+    args: {order_id: A1023}
+    expect:
+      result: ok
+      data: {total: 0}
+
+  - id: p3
+    do: mcp
+    as: zhao
+    tool: get_order
+    args: {order_id: B2087}
+    expect:
+      result: ok
+      data: {refunded_amount: 0}

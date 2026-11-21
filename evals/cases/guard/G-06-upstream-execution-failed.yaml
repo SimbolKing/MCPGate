@@ -1,0 +1,133 @@
+id: G-06
+title: 网关不预判业务规则，同意后被订单系统 409 拒绝落为 execution_failed
+layer: guard
+category: approval
+orders: [A1029, A1031]
+steps:
+  - id: s1
+    do: mcp
+    as: wang
+    tool: create_refund
+    args:
+      order_id: A1029
+      amount: 10
+      reason_category: other
+      reason: 评测用例 G-06
+    save:
+      ap1: data.approval_id
+    expect:
+      result: pending
+      data: {status: pending}
+
+  - id: s2
+    do: mcp
+    as: wang
+    tool: create_refund
+    args:
+      order_id: A1031
+      amount: 400
+      reason_category: other
+      reason: 评测用例 G-06
+    save:
+      ap2: data.approval_id
+    expect:
+      result: pending
+      data: {status: pending}
+
+  - id: s3
+    do: guard
+    as: li
+    call: approve
+    approval: "${ap1}"
+    comment: 同意
+    expect:
+      status: 200
+      data:
+        status: execution_failed
+        failure_code: order_not_refundable
+
+  - id: a1
+    do: guard
+    as: sun
+    call: audit_logs
+    params:
+      approval_id: "${ap1}"
+      event_type: approval_execute
+    expect:
+      status: 200
+      data:
+        total: 1
+        "length(items)": 1
+        "items[0].status_code": 409
+        "items[0].error_code": order_not_refundable
+        "items[0].result.from": executing
+        "items[0].result.to": execution_failed
+
+  - id: s4
+    do: guard
+    as: li
+    call: approve
+    approval: "${ap2}"
+    comment: 同意
+    expect:
+      status: 200
+      data:
+        status: execution_failed
+        failure_code: refund_amount_exceeded
+
+  - id: a2
+    do: guard
+    as: sun
+    call: audit_logs
+    params:
+      approval_id: "${ap2}"
+      event_type: approval_execute
+    expect:
+      status: 200
+      data:
+        total: 1
+        "length(items)": 1
+        "items[0].status_code": 409
+        "items[0].error_code": refund_amount_exceeded
+        "items[0].result.from": executing
+        "items[0].result.to": execution_failed
+
+  - id: p1
+    do: mcp
+    as: li
+    tool: get_order
+    args: {order_id: A1029}
+    expect:
+      result: ok
+      data: {refunded_amount: 0}
+
+  - id: p2
+    do: mcp
+    as: li
+    tool: get_order
+    args: {order_id: A1031}
+    expect:
+      result: ok
+      data:
+        refunded_amount: 158
+        "sort(refunds[].refund_id)": [R000101]
+
+  - id: p3
+    do: mcp
+    as: wang
+    tool: get_approval
+    args: {approval_id: "${ap1}"}
+    expect:
+      result: ok
+      data: {status: execution_failed}
+      message_contains: [拒绝执行]
+
+  - id: p4
+    do: mcp
+    as: wang
+    tool: get_approval
+    args: {approval_id: "${ap2}"}
+    expect:
+      result: ok
+      data: {status: execution_failed}
+      message_contains: [拒绝执行]

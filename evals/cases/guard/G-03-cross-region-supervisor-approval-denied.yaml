@@ -1,0 +1,111 @@
+id: G-03
+title: 主管不能跨区域审批，本区域主管审批可执行
+layer: guard
+category: approval
+orders: [A1023, B2087]
+steps:
+  - id: s1
+    do: mcp
+    as: wang
+    tool: create_refund
+    args:
+      order_id: A1023
+      amount: 299
+      reason_category: quality_issue
+      reason: 评测用例 G-03
+      ticket_id: T5001
+    save:
+      ap_east: data.approval_id
+    expect:
+      result: pending
+      data: {status: pending}
+
+  - id: s2
+    do: guard
+    as: zhou
+    call: approve
+    approval: "${ap_east}"
+    comment: 同意
+    authz: deny
+    expect:
+      status: 403
+      error_code: approval_access_denied
+
+  - id: s3
+    do: guard
+    as: zhou
+    call: reject
+    approval: "${ap_east}"
+    comment: 拒绝
+    authz: deny
+    expect:
+      status: 403
+      error_code: approval_access_denied
+
+  - id: s4
+    do: mcp
+    as: zhao
+    tool: create_refund
+    args:
+      order_id: B2087
+      amount: 2499
+      reason_category: quality_issue
+      reason: 评测用例 G-03
+      ticket_id: T5012
+    save:
+      ap_north: data.approval_id
+    expect:
+      result: pending
+      data: {status: pending}
+
+  - id: s5
+    do: guard
+    as: li
+    call: approve
+    approval: "${ap_north}"
+    comment: 同意
+    authz: deny
+    expect:
+      status: 403
+      error_code: approval_access_denied
+
+  - id: s6
+    do: guard
+    as: zhou
+    call: approve
+    approval: "${ap_north}"
+    comment: 同意
+    save:
+      rid_north: data.refund_id
+    expect:
+      status: 200
+      data: {status: executed}
+
+  - id: p1
+    do: mcp
+    as: li
+    tool: get_approval
+    args: {approval_id: "${ap_east}"}
+    expect:
+      result: ok
+      data: {status: pending}
+
+  - id: p2
+    do: mcp
+    as: li
+    tool: get_order
+    args: {order_id: A1023}
+    expect:
+      result: ok
+      data: {refunded_amount: 0}
+
+  - id: p3
+    do: mcp
+    as: zhou
+    tool: get_refund
+    args: {refund_id: "${rid_north}"}
+    expect:
+      result: ok
+      data:
+        created_by: u2002
+        created_by_role: supervisor

@@ -1,0 +1,14 @@
+id: D-34
+title: 制度问答：蓝牙耳机单侧无声排查（跨文档引用故障排查手册）
+layer: dialogue
+category: kbqa
+steps:
+  - id: t1
+    do: chat
+    as: zhao
+    query: 蓝牙耳机一边没有声音怎么排查？
+    expect:
+      should:
+        trace: {mode: exact, calls: []}
+        clauses: [{doc: 故障排查手册, clause: "1.1"}]
+        citations: [{doc: 故障排查手册, clause: "1.1"}]

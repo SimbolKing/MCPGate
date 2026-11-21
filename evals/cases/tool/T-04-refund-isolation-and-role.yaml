@@ -1,0 +1,52 @@
+id: T-04
+title: 退款单跨区域隔离与客服调用退款列表角色限制
+layer: tool
+category: isolation
+orders: [A1031, C3055]
+steps:
+  - id: s1
+    do: mcp
+    as: zhao
+    tool: get_refund
+    args: {refund_id: R000101}
+    authz: deny
+    target: R000101
+    expect:
+      result: denied
+      status: 403
+      error_code: refund_access_denied
+
+  - id: s2
+    do: mcp
+    as: wang
+    tool: get_refund
+    args: {refund_id: R000104}
+    authz: deny
+    target: R000104
+    expect:
+      result: denied
+      status: 403
+      error_code: refund_access_denied
+
+  - id: s3
+    do: mcp
+    as: wang
+    tool: get_refund
+    args: {refund_id: R000101}
+    expect:
+      result: ok
+      data:
+        order_id: A1031
+        amount: 158
+
+  - id: s4
+    do: mcp
+    as: wang
+    tool: list_refunds
+    args: {}
+    authz: deny
+    expect:
+      result: denied
+      status: 403
+      error_code: insufficient_role
+      not_contains: [R000101, R000102, R000103, R000104]

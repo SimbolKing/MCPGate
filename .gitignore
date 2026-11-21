@@ -1,0 +1,39 @@
+# Environment files (keep *.example tracked)
+.env
+**/.env
+
+# Python / uv / test / lint caches
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+**/.pytest_cache/
+.ruff_cache/
+**/.ruff_cache/
+.coverage
+**/.coverage
+htmlcov/
+**/htmlcov/
+coverage.xml
+
+# Local databases and runtime data
+*.db
+*.db-shm
+*.db-wal
+mock-api/data/
+knowledge-base/kb.lock.json
+workflows/build/
+workflows/dify/docker/
+workflows/dify/docker.bak.*/
+evals/reports/runs/
+evals/.cache/
+
+# Reference upstream repositories (not tracked)
+upstream/
+
+# OS / IDE artifacts
+.DS_Store
+.idea/
+.vscode/

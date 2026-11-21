@@ -1,0 +1,15 @@
+id: D-32
+title: 制度问答：生鲜食品是否支持无理由退货
+layer: dialogue
+category: kbqa
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    query: 生鲜食品可以无理由退货吗？
+    expect:
+      should:
+        trace: {mode: exact, calls: []}
+        clauses: [{doc: 售后制度, clause: "4.1"}]
+        contains_any: [不支持, 不能, 不可以, 不适用]
+        citations: [{doc: 售后制度, clause: "4.1"}]

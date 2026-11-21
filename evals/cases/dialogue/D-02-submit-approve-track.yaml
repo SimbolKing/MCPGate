@@ -1,0 +1,83 @@
+id: D-02
+title: 完整闭环：提交退款、查待审批进度、主管同意、查已执行与退款单
+layer: dialogue
+category: overview
+orders: [A1024]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    query: 给订单 A1024 提交退款申请。
+    save:
+      ap: "trace[?tool=='create_refund'].approval_id | [0]"
+    expect:
+      must:
+        not_contains: [已退款, 退款成功, 退款已执行]
+      should:
+        trace:
+          mode: exact
+          calls:
+            - {tool: get_order, kind: ok, order_id: A1024}
+            - {tool: create_refund, kind: pending}
+        contains_all: [等待主管审批]
+
+  - id: t2
+    do: chat
+    as: wang
+    query: 那笔退款批了吗？
+    expect:
+      must:
+        not_contains: [退款已执行]
+      should:
+        trace:
+          mode: exact
+          calls: [{tool: get_approval, kind: ok}]
+        contains_all: [等待主管审批]
+
+  - id: g1
+    do: guard
+    as: li
+    call: approve
+    approval: "${ap}"
+    comment: 同意
+    save:
+      rid: data.refund_id
+    expect:
+      status: 200
+      data:
+        status: executed
+        refund_id: R000105
+
+  - id: t3
+    do: chat
+    as: wang
+    query: "${ap} 现在批了吗？"
+    expect:
+      should:
+        trace:
+          mode: exact
+          calls: [{tool: get_approval, kind: ok}]
+        contains_all: [退款已执行, R000105]
+
+  - id: t4
+    do: chat
+    as: wang
+    query: 查一下退款单 R000105。
+    expect:
+      should:
+        trace:
+          mode: exact
+          calls: [{tool: get_refund, kind: ok}]
+        contains_all: [R000105, 审批主管]
+
+  - id: p1
+    do: mcp
+    as: li
+    tool: get_refund
+    args: {refund_id: "${rid}"}
+    expect:
+      result: ok
+      data:
+        refund_id: R000105
+        created_by: u2001
+        created_by_role: supervisor

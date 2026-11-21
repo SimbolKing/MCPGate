@@ -1,0 +1,43 @@
+[project]
+name = "mcpgate-guard"
+version = "1.0.0"
+description = "MCPGate 网关层审批与审计服务（guard）"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "httpx>=0.27",
+    "pydantic>=2.9,<3",
+    "pydantic-settings>=2.4,<3",
+    "PyJWT[crypto]>=2.9,<3",
+    "SQLAlchemy>=2.0,<2.1",
+    "uvicorn>=0.30",
+]
+
+[dependency-groups]
+dev = [
+    "PyYAML>=6.0,<7",
+    "pytest>=8",
+    "pytest-cov>=5",
+    "ruff>=0.6",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.coverage.run]
+branch = true
+source = ["app"]
+
+[tool.coverage.report]
+fail_under = 90

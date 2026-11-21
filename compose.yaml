@@ -1,0 +1,9 @@
+name: mcpgate
+include:
+  - jwt/compose.yaml
+  - mock-api/compose.yaml
+  - gateway/compose.yaml
+  - workflows/compose.yaml
+networks:
+  default:
+    name: mcpgate-net

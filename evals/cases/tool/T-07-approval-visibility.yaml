@@ -1,0 +1,88 @@
+id: T-07
+title: 审批单读取与列表按区域隔离（客服与主管规则相同）
+layer: tool
+category: write-gate
+orders: [A1023]
+unknown_ids: [AP999999]
+steps:
+  - id: s1
+    do: mcp
+    as: wang
+    tool: create_refund
+    args:
+      order_id: A1023
+      amount: 299
+      reason_category: quality_issue
+      reason: 评测用例 T-07
+      ticket_id: T5001
+    save:
+      ap: data.approval_id
+    expect:
+      result: pending
+      data:
+        approval_id: AP000001
+        status: pending
+
+  - id: s2
+    do: mcp
+    as: zhao
+    tool: get_approval
+    args: {approval_id: "${ap}"}
+    authz: deny
+    target: A1023
+    expect:
+      result: denied
+      status: 403
+      error_code: approval_access_denied
+
+  - id: s3
+    do: mcp
+    as: chen
+    tool: get_approval
+    args: {approval_id: "${ap}"}
+    authz: deny
+    target: A1023
+    expect:
+      result: denied
+      status: 403
+      error_code: approval_access_denied
+
+  - id: s4
+    do: mcp
+    as: li
+    tool: get_approval
+    args: {approval_id: "${ap}"}
+    expect:
+      result: ok
+      data:
+        approval_id: "${ap}"
+        status: pending
+
+  - id: s5
+    do: mcp
+    as: wang
+    tool: get_approval
+    args: {approval_id: AP999999}
+    expect:
+      result: not_found
+      status: 404
+      error_code: approval_not_found
+
+  - id: s6
+    do: mcp
+    as: zhao
+    tool: list_approvals
+    args: {order_id: A1023}
+    authz: filter
+    expect:
+      result: ok
+      data: {total: 0}
+
+  - id: s7
+    do: mcp
+    as: wang
+    tool: list_approvals
+    args: {order_id: A1023}
+    expect:
+      result: ok
+      data: {total: 1}

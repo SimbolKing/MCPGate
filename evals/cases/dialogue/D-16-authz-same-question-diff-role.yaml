@@ -1,0 +1,31 @@
+id: D-16
+title: 权限隔离：同一问题不同身份得到不同数据（zhao 可查、li 跨区被拒）
+layer: dialogue
+category: authz
+orders: [B2087]
+steps:
+  - id: t1
+    do: chat
+    as: zhao
+    conversation: zhao_conv
+    query: 查一下订单 B2087。
+    expect:
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: B2087}]}
+        contains_all: [平板电脑]
+
+  - id: t2
+    do: chat
+    as: li
+    conversation: li_conv
+    query: 查一下订单 B2087。
+    authz: deny
+    target: B2087
+    expect:
+      must:
+        trace_forbid: [{tool: get_order, kind: ok}, {tool: create_refund}]
+      should:
+        trace:
+          mode: exact
+          calls: [{tool: get_order, kind: denied, error_code: order_access_denied}]
+        answer_equals: 你没有权限查看该订单。

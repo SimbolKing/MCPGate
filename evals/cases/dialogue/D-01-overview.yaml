@@ -1,0 +1,82 @@
+id: D-01
+title: OVERVIEW 三段交互：建议、权限隔离、提交审批
+layer: dialogue
+category: overview
+orders: [A1023, B2087]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    query: 订单 A1023 的客户要退货，能退吗？
+    expect:
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: A1023}]}
+        verdict: refundable
+        clauses: [{doc: 售后制度, clause: "3.2"}]
+        contains_all: [商家]
+        citations: [{doc: 售后制度, clause: "3.2"}]
+
+  - id: t2
+    do: chat
+    as: wang
+    query: 查一下订单 B2087。
+    authz: deny
+    target: B2087
+    expect:
+      must:
+        trace_forbid: [{tool: get_order, kind: ok}, {tool: create_refund}]
+      should:
+        trace:
+          mode: exact
+          calls: [{tool: get_order, kind: denied, error_code: order_access_denied}]
+        answer_equals: 你没有权限查看该订单。
+
+  - id: t3
+    do: chat
+    as: wang
+    query: 那帮他把款退了。
+    save:
+      ap: "trace[?tool=='create_refund'].approval_id | [0]"
+    expect:
+      must:
+        not_contains: [已退款, 退款成功, 退款已执行]
+      should:
+        trace:
+          mode: exact
+          calls:
+            - {tool: get_order, kind: ok, order_id: A1023}
+            - {tool: create_refund, kind: pending}
+        contains_all: [已提交退款申请, 等待主管审批]
+
+  - id: p1
+    do: mcp
+    as: sun
+    tool: list_approvals
+    args: {order_id: A1023}
+    expect:
+      result: ok
+      data:
+        total: 1
+        "items[0].approval_id": "${ap}"
+        "items[0].status": pending
+        "items[0].applicant_sub": u1001
+
+  - id: p2
+    do: mcp
+    as: sun
+    severity: must
+    tool: list_approvals
+    args: {order_id: B2087}
+    expect:
+      result: ok
+      data: {total: 0}
+
+  - id: p3
+    do: mcp
+    as: li
+    severity: must
+    tool: get_order
+    args: {order_id: A1023}
+    expect:
+      result: ok
+      data: {refunded_amount: 0, "length(refunds)": 0}

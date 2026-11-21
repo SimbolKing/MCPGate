@@ -1,0 +1,77 @@
+id: G-04
+title: 主管提交申请须回避自批，由另一位主管审批执行
+layer: guard
+category: approval
+orders: [A1033]
+steps:
+  - id: s1
+    do: mcp
+    as: li
+    tool: create_refund
+    args:
+      order_id: A1033
+      amount: 5999
+      reason_category: quality_issue
+      reason: 评测用例 G-04
+      ticket_id: T5008
+    save:
+      ap: data.approval_id
+    expect:
+      result: pending
+      data:
+        status: pending
+        applicant_sub: u2001
+
+  - id: s2
+    do: guard
+    as: li
+    call: approve
+    approval: "${ap}"
+    comment: 同意
+    authz: deny
+    expect:
+      status: 403
+      error_code: self_approval_forbidden
+
+  - id: s3
+    do: guard
+    as: li
+    call: reject
+    approval: "${ap}"
+    comment: 拒绝
+    authz: deny
+    expect:
+      status: 403
+      error_code: self_approval_forbidden
+
+  - id: p1
+    do: mcp
+    as: sun
+    tool: get_order
+    args: {order_id: A1033}
+    expect:
+      result: ok
+      data: {refunded_amount: 0}
+
+  - id: s4
+    do: guard
+    as: sun
+    call: approve
+    approval: "${ap}"
+    comment: 复核通过
+    save:
+      rid: data.refund_id
+    expect:
+      status: 200
+      data: {status: executed}
+
+  - id: p2
+    do: mcp
+    as: sun
+    tool: get_refund
+    args: {refund_id: "${rid}"}
+    expect:
+      result: ok
+      data:
+        created_by: u2003
+        created_by_role: supervisor

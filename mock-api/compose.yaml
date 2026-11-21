@@ -1,0 +1,17 @@
+services:
+  mock-api:
+    build: .
+    environment:
+      MOCKAPI_JWT_ISSUER: ${MCPGATE_JWT_ISSUER:-http://dev-idp:8010}
+      MOCKAPI_JWT_AUDIENCE: ${MCPGATE_JWT_AUDIENCE:-mcpgate}
+      MOCKAPI_JWT_JWKS_URL: ${MCPGATE_JWKS_URL:-http://dev-idp:8010/.well-known/jwks.json}
+      MOCKAPI_JWKS_REFRESH_COOLDOWN_SECONDS: ${MOCKAPI_JWKS_REFRESH_COOLDOWN_SECONDS:-30}
+      MOCKAPI_JWKS_TIMEOUT_SECONDS: ${MOCKAPI_JWKS_TIMEOUT_SECONDS:-5}
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped

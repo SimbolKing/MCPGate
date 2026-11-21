@@ -1,0 +1,51 @@
+[
+  {
+    "name": "create_refund",
+    "method": "POST",
+    "path": "/api/v1/refunds",
+    "write": true,
+    "owner": "upstream"
+  },
+  {
+    "name": "get_approval",
+    "method": "GET",
+    "path": "/guard/v1/approvals/{approval_id}",
+    "write": false,
+    "owner": "gateway"
+  },
+  {
+    "name": "get_order",
+    "method": "GET",
+    "path": "/api/v1/orders/{order_id}",
+    "write": false,
+    "owner": "upstream"
+  },
+  {
+    "name": "get_refund",
+    "method": "GET",
+    "path": "/api/v1/refunds/{refund_id}",
+    "write": false,
+    "owner": "upstream"
+  },
+  {
+    "name": "list_approvals",
+    "method": "GET",
+    "path": "/guard/v1/approvals",
+    "write": false,
+    "owner": "gateway"
+  },
+  {
+    "name": "list_orders",
+    "method": "GET",
+    "path": "/api/v1/orders",
+    "write": false,
+    "owner": "upstream"
+  },
+  {
+    "name": "list_refunds",
+    "method": "GET",
+    "path": "/api/v1/refunds",
+    "write": false,
+    "owner": "upstream"
+  }
+]

@@ -1,0 +1,25 @@
+# Tests and Python virtualenvs / caches
+tests/
+guard/tests/
+**/.venv/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.ruff_cache/
+**/.coverage
+**/htmlcov/
+
+# Non-guard gateway assets (guard image context is gateway/, only needs guard/ and generated/tools.manifest.json)
+scripts/
+resources/
+templates/
+generated/wasmplugins/
+generated/aftersale.mcp.yaml
+
+# Local secrets and runtime databases
+.env
+**/.env
+*.db
+*.db-shm
+*.db-wal
+guard/data/

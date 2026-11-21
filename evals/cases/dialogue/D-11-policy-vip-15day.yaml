@@ -1,0 +1,16 @@
+id: D-11
+title: 制度场景：会员 15 天无理由期限内可退（A1032）
+layer: dialogue
+category: policy
+orders: [A1032]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    query: 订单 A1032 的客户是会员，能退吗？
+    expect:
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: A1032}]}
+        verdict: refundable
+        clauses: [{doc: 售后制度, clause: "6.1"}]
+        citations: [{doc: 售后制度, clause: "6.1"}]

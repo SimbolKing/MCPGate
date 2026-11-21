@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MCPGate 主管审批台</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand">MCPGate 审批与审计控制台</div>
+      <nav class="nav">
+        <a href="./index.html" class="active">退款审批</a>
+        <a href="./audit.html">审计日志</a>
+      </nav>
+    </div>
+    <div class="user-info">
+      <span id="user-badge" class="user-badge">未登录</span>
+      <button id="logout-btn" type="button" class="btn btn-sm btn-ghost hidden">退出</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="login-view" class="card login-wrapper">
+      <h1>登录审批控制台</h1>
+      <p class="login-subtitle">仅主管角色可审批与查询审计；审批通过后将以当前登录主管的身份执行退款。</p>
+      <div id="login-alert" class="alert hidden"></div>
+
+      <div id="dev-login-section">
+        <form id="dev-login-form">
+          <div class="form-group">
+            <label for="login-username">开发账号（如 li / zhou / sun）</label>
+            <input id="login-username" type="text" autocomplete="username" required />
+          </div>
+          <div class="form-group">
+            <label for="login-password">密码</label>
+            <input id="login-password" type="password" autocomplete="current-password" required />
+          </div>
+          <button type="submit" class="btn btn-primary">账号密码登录</button>
+        </form>
+        <hr class="divider" />
+      </div>
+
+      <form id="token-form">
+        <div class="form-group">
+          <label for="token-input">或直接粘贴 JWT 令牌</label>
+          <textarea id="token-input" placeholder="粘贴 JWT（可带或不带 Bearer 前缀）"></textarea>
+        </div>
+        <button type="submit" class="btn">使用 JWT 登录</button>
+      </form>
+    </section>
+
+    <section id="main-view" class="hidden">
+      <div id="role-banner" class="alert hidden"></div>
+
+      <div class="card">
+        <div class="tabs-bar">
+          <div class="tabs" id="status-tabs">
+            <button type="button" class="tab active" data-tab="active">待处理</button>
+            <button type="button" class="tab" data-tab="done">已处理</button>
+            <button type="button" class="tab" data-tab="all">全部</button>
+          </div>
+          <div class="inline-controls">
+            <input id="order-search-input" type="text" placeholder="按订单号筛选，如 A1023" style="width: 200px;" />
+            <button id="search-btn" type="button" class="btn btn-sm">查询</button>
+            <button id="refresh-btn" type="button" class="btn btn-sm">刷新</button>
+            <span id="refresh-hint" class="muted" style="font-size: 12px;">每 30 秒自动刷新</span>
+          </div>
+        </div>
+
+        <div class="layout-split">
+          <div>
+            <div style="overflow-x: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>审批单号</th>
+                    <th>订单号</th>
+                    <th>区域</th>
+                    <th>申请金额</th>
+                    <th>原因类别</th>
+                    <th>申请人</th>
+                    <th>提交时间</th>
+                    <th>剩余有效期</th>
+                    <th>状态</th>
+                  </tr>
+                </thead>
+                <tbody id="approvals-tbody"></tbody>
+              </table>
+            </div>
+            <div id="approvals-empty" class="empty-state hidden">当前筛选条件下暂无审批单。</div>
+            <div class="pagination">
+              <span id="approvals-page-info">共 0 条</span>
+              <div class="inline-controls">
+                <button id="prev-page-btn" type="button" class="btn btn-sm">上一页</button>
+                <button id="next-page-btn" type="button" class="btn btn-sm">下一页</button>
+              </div>
+            </div>
+          </div>
+
+          <aside id="detail-panel" class="card" style="margin-bottom: 0;">
+            <div class="empty-state">请从左侧选择一张审批单查看详情与执行操作。</div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./approvals.js"></script>
+</body>
+</html>

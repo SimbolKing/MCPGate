@@ -1,0 +1,40 @@
+id: T-02
+title: 主管同样受区域权限约束（读订单）
+layer: tool
+category: isolation
+orders: [B2087, A1023]
+steps:
+  - id: s1
+    do: mcp
+    as: li
+    tool: get_order
+    args: {order_id: B2087}
+    authz: deny
+    target: B2087
+    expect:
+      result: denied
+      status: 403
+      error_code: order_access_denied
+
+  - id: s2
+    do: mcp
+    as: zhou
+    tool: get_order
+    args: {order_id: A1023}
+    authz: deny
+    target: A1023
+    expect:
+      result: denied
+      status: 403
+      error_code: order_access_denied
+
+  - id: s3
+    do: mcp
+    as: sun
+    tool: get_order
+    args: {order_id: B2087}
+    expect:
+      result: ok
+      data:
+        order_id: B2087
+        region: north

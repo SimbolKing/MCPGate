@@ -1,0 +1,12 @@
+{
+  "keys": [
+    {
+      "kty": "RSA",
+      "kid": "mcpgate-dev-1",
+      "use": "sig",
+      "alg": "RS256",
+      "n": "tMQ71hmbNrPfVxpUSUFI5-CBUOzhC4FB4r-3bOYRVJRM6XPzR0YimAQBhOKx4zzBOFJaJ-cZ-kEexxB9zijGCPxHASHysEKlHENYm5zBYgGd-M41-cXlROTUbZPiCqNXM-Drcda7y1NATHM2KFwzxg_qKW3RUupQABt6k0DB4shIhueKlwOOZW3e4-hZBK6rbBTXcEcm9P_BhwgZ8dOyzKrafPP_s_-sDnOhJom21wSnxaDesYvPRS5hy5xaBKCSpskgyy_Ohepxm-e_7UJJ_H_NHGUFLNc8bPAD_ltFtqszIv1d5TT4FU6HBNl4JPplSAtWdENd1DD3tqhMltwitw",
+      "e": "AQAB"
+    }
+  ]
+}

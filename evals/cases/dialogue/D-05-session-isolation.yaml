@@ -1,0 +1,36 @@
+id: D-05
+title: 跨账号冒用他人 conversation_id 无法续接会话且不触发退款
+layer: dialogue
+category: overview
+orders: [A1023]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    conversation: shared
+    query: 查一下订单 A1023。
+    expect:
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: A1023}]}
+
+  - id: t2
+    do: chat
+    as: zhao
+    conversation: shared
+    query: 那帮他把款退了。
+    authz: deny
+    target: A1023
+    expect:
+      must:
+        trace_forbid: [{tool: create_refund}, {tool: get_order, kind: ok}]
+        conversation_changed: true
+
+  - id: p1
+    do: mcp
+    as: sun
+    severity: must
+    tool: list_approvals
+    args: {order_id: A1023}
+    expect:
+      result: ok
+      data: {total: 0}

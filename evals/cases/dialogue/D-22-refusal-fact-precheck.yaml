@@ -1,0 +1,44 @@
+id: D-22
+title: 拒绝提交：事实预检拦截待支付、处理中退款与已全额退款订单
+layer: dialogue
+category: refusal
+orders: [A1029, A1035, A1034]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    conversation: c1
+    query: 给订单 A1029 退款。
+    expect:
+      must:
+        trace_forbid: [{tool: create_refund}]
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: A1029}]}
+        contains_all: [待支付]
+        clauses: [{doc: 售后制度, clause: "5.1"}]
+
+  - id: t2
+    do: chat
+    as: wang
+    conversation: c2
+    query: 给订单 A1035 提交退款。
+    expect:
+      must:
+        trace_forbid: [{tool: create_refund}]
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: A1035}]}
+        contains_all: [R000103]
+        clauses: [{doc: 售后制度, clause: "5.4"}]
+
+  - id: t3
+    do: chat
+    as: wang
+    conversation: c3
+    query: 给订单 A1034 退款。
+    expect:
+      must:
+        trace_forbid: [{tool: create_refund}]
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: A1034}]}
+        contains_all: [已全额退款]
+        clauses: [{doc: 售后制度, clause: "5.4"}]

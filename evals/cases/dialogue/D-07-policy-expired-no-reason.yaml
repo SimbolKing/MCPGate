@@ -1,0 +1,16 @@
+id: D-07
+title: 制度场景：超过七天无理由期不可退（A1025）
+layer: dialogue
+category: policy
+orders: [A1025]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    query: 订单 A1025 能退吗？
+    expect:
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: A1025}]}
+        verdict: not_refundable
+        clauses: [{doc: 售后制度, clause: "2.2"}]
+        citations: [{doc: 售后制度, clause: "2.2"}]

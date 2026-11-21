@@ -1,0 +1,28 @@
+[project]
+name = "mcpgate-gateway"
+version = "1.0.0"
+description = "MCPGate Higress 配置渲染脚本与契约测试"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "PyYAML>=6.0,<7",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["render", "smoke"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["scripts"]

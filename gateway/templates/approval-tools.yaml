@@ -1,0 +1,174 @@
+approvalSchema:
+  type: object
+  required:
+    - approval_id
+    - status
+    - message
+    - tool
+    - order_id
+    - region
+    - amount
+    - reason_category
+    - reason
+    - applicant_sub
+    - submitted_at
+    - expires_at
+  properties:
+    approval_id:
+      type: string
+      description: 审批单号，如 AP000001
+    status:
+      type: string
+      enum:
+        - pending
+        - executing
+        - executed
+        - execution_failed
+        - rejected
+        - expired
+      description: pending 待审批 / executing 已同意执行中 / executed 已执行 / execution_failed 已同意但执行失败 / rejected 已拒绝 / expired 已过期
+    message:
+      type: string
+      description: 当前状态的中文说明，可直接转述给用户
+    tool:
+      type: string
+      description: 申请对应的写操作，当前为 create_refund
+    order_id:
+      type: string
+      description: 订单号
+    region:
+      type: string
+      enum:
+        - east
+        - north
+        - south
+      description: 订单所属区域
+    amount:
+      type: number
+      description: 申请退款金额（元）
+    reason_category:
+      type: string
+      enum:
+        - quality_issue
+        - no_reason
+        - wrong_item
+        - damaged_in_transit
+        - not_received
+        - other
+      description: 退款原因类别
+    reason:
+      type: string
+      description: 退款说明
+    ticket_id:
+      type: string
+      description: 关联的售后工单号
+    applicant_sub:
+      type: string
+      description: 申请人的用户标识
+    applicant_name:
+      type: string
+      description: 申请人姓名
+    submitted_at:
+      type: string
+      description: 提交时间
+    expires_at:
+      type: string
+      description: 审批截止时间
+    decided_by_sub:
+      type: string
+      description: 审批主管的用户标识
+    decided_by_name:
+      type: string
+      description: 审批主管姓名
+    decided_at:
+      type: string
+      description: 审批时间
+    decision_comment:
+      type: string
+      description: 审批意见
+    refund_id:
+      type: string
+      description: 执行成功后的退款单号，可用 get_refund 查询
+    executed_at:
+      type: string
+      description: 执行成功的时间
+    failure_code:
+      type: string
+      description: 执行失败时订单系统的错误码
+    failure_message:
+      type: string
+      description: 执行失败时订单系统的说明
+
+approvalFieldGuide: |+
+  # 退款申请（审批单）字段说明
+
+  - **approval_id**: 审批单号，如 AP000001 (Type: string)
+  - **status**: pending 待审批 / executing 已同意执行中 / executed 已执行 / execution_failed 已同意但执行失败 / rejected 已拒绝 / expired 已过期 (Type: string)
+  - **message**: 当前状态的中文说明，可直接转述给用户 (Type: string)
+  - **tool**: 申请对应的写操作，当前为 create_refund (Type: string)
+  - **order_id**: 订单号 (Type: string)
+  - **region**: 订单所属区域 (Type: string)
+  - **amount**: 申请退款金额（元） (Type: number)
+  - **reason_category**: 退款原因类别 (Type: string)
+  - **reason**: 退款说明 (Type: string)
+  - **ticket_id**: 关联的售后工单号 (Type: string)
+  - **applicant_sub**: 申请人的用户标识 (Type: string)
+  - **applicant_name**: 申请人姓名 (Type: string)
+  - **submitted_at**: 提交时间 (Type: string)
+  - **expires_at**: 审批截止时间 (Type: string)
+  - **decided_by_sub**: 审批主管的用户标识 (Type: string)
+  - **decided_by_name**: 审批主管姓名 (Type: string)
+  - **decided_at**: 审批时间 (Type: string)
+  - **decision_comment**: 审批意见 (Type: string)
+  - **refund_id**: 执行成功后的退款单号，可用 get_refund 查询 (Type: string)
+  - **executed_at**: 执行成功的时间 (Type: string)
+  - **failure_code**: 执行失败时订单系统的错误码 (Type: string)
+  - **failure_message**: 执行失败时订单系统的说明 (Type: string)
+
+  ## Original Response
+
+overrides:
+  create_refund:
+    description: 提交退款申请【写操作】 - 【写操作】为指定订单提交一笔退款申请。申请不会立即执行：需要负责该区域的主管在审批页同意后，退款才会在订单系统中执行。调用成功只表示申请已提交，返回审批单号 approval_id 和状态 pending，此时退款尚未发生，不要告诉用户"已退款"。只能对当前登录人负责区域内的订单提交；同一订单已有待审批的申请时会被拒绝。之后用 get_approval 查询审批结果。
+
+tools:
+  - name: get_approval
+    description: 查询退款申请进度 - 按审批单号查询一笔退款申请的审批状态与执行结果：待审批、已执行（含退款单号）、已同意但执行失败（含原因）、已拒绝（含主管意见）、已过期。返回的 message 可直接转述。只能查询当前登录人负责区域内的申请；不在负责区域返回 403，单号不存在返回 404。
+    args:
+      - name: approval_id
+        description: 审批单号，如 AP000001
+        type: string
+        required: true
+        position: path
+    requestTemplate:
+      url: http://guard:8020/guard/v1/approvals/{approval_id}
+      method: GET
+  - name: list_approvals
+    description: 查询退款申请列表 - 按订单号和审批状态筛选退款申请，按提交时间倒序分页返回。不知道审批单号时，用订单号查该订单的申请记录。结果只包含当前登录人负责区域内的申请。退款申请是尚待主管审批或已有审批结论的申请单，不同于已执行的退款单（退款单用 get_refund 查询）。
+    args:
+      - name: order_id
+        description: 只看某个订单的退款申请，如 A1023
+        type: string
+        position: query
+      - name: status
+        description: 审批状态
+        type: string
+        position: query
+        enum:
+          - pending
+          - executing
+          - executed
+          - execution_failed
+          - rejected
+          - expired
+      - name: page
+        description: 页码，从 1 开始，默认 1
+        type: integer
+        position: query
+      - name: page_size
+        description: 每页条数，1–50，默认 20
+        type: integer
+        position: query
+    requestTemplate:
+      url: http://guard:8020/guard/v1/approvals
+      method: GET

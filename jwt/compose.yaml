@@ -1,0 +1,14 @@
+services:
+  dev-idp:
+    build: .
+    environment:
+      DEVIDP_ISSUER: ${MCPGATE_JWT_ISSUER:-http://dev-idp:8010}
+      DEVIDP_AUDIENCE: ${MCPGATE_JWT_AUDIENCE:-mcpgate}
+    ports:
+      - "127.0.0.1:8010:8010"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/healthz')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped

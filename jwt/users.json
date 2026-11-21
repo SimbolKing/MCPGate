@@ -1,0 +1,50 @@
+[
+  {
+    "sub": "u1001",
+    "username": "wang",
+    "password": "dev-password",
+    "name": "王磊",
+    "role": "agent",
+    "regions": ["east"]
+  },
+  {
+    "sub": "u1002",
+    "username": "zhao",
+    "password": "dev-password",
+    "name": "赵宇",
+    "role": "agent",
+    "regions": ["north"]
+  },
+  {
+    "sub": "u1003",
+    "username": "chen",
+    "password": "dev-password",
+    "name": "陈晨",
+    "role": "agent",
+    "regions": ["south"]
+  },
+  {
+    "sub": "u2001",
+    "username": "li",
+    "password": "dev-password",
+    "name": "李娜",
+    "role": "supervisor",
+    "regions": ["east"]
+  },
+  {
+    "sub": "u2002",
+    "username": "zhou",
+    "password": "dev-password",
+    "name": "周涛",
+    "role": "supervisor",
+    "regions": ["north", "south"]
+  },
+  {
+    "sub": "u2003",
+    "username": "sun",
+    "password": "dev-password",
+    "name": "孙浩",
+    "role": "supervisor",
+    "regions": ["east", "north", "south"]
+  }
+]

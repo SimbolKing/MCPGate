@@ -1,0 +1,1672 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "售后订单系统 API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/orders/{order_id}": {
+      "get": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "查询订单详情",
+        "description": "按订单号查询一笔订单的完整信息：状态、金额、签收时间与已签收天数、商品及类目、客户等级、售后工单、已有退款。只返回事实数据，不判断是否符合售后制度。只能查询当前登录人负责区域内的订单；订单不在负责区域返回 403，订单号不存在返回 404。",
+        "operationId": "get_order",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "订单号，如 A1023"
+            },
+            "description": "订单号，如 A1023"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "order_id": {
+                      "type": "string",
+                      "description": "订单号"
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "east",
+                        "north",
+                        "south"
+                      ],
+                      "description": "订单所属区域"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending_payment",
+                        "paid",
+                        "shipped",
+                        "delivered",
+                        "completed",
+                        "cancelled"
+                      ],
+                      "description": "订单状态"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "description": "下单时间"
+                    },
+                    "paid_at": {
+                      "type": "string",
+                      "description": "支付时间"
+                    },
+                    "shipped_at": {
+                      "type": "string",
+                      "description": "发货时间"
+                    },
+                    "delivered_at": {
+                      "type": "string",
+                      "description": "签收时间"
+                    },
+                    "days_since_delivery": {
+                      "type": "integer",
+                      "description": "已签收的自然日天数，签收当天为 0"
+                    },
+                    "total_amount": {
+                      "type": "number",
+                      "description": "订单实付金额（元）"
+                    },
+                    "refunded_amount": {
+                      "type": "number",
+                      "description": "已成功退款累计金额（元）"
+                    },
+                    "refundable_amount": {
+                      "type": "number",
+                      "description": "当前还可退金额（元）"
+                    },
+                    "refund_status": {
+                      "type": "string",
+                      "enum": [
+                        "none",
+                        "partial",
+                        "full"
+                      ],
+                      "description": "退款进度（none / partial / full）"
+                    },
+                    "customer": {
+                      "properties": {
+                        "customer_id": {
+                          "type": "string",
+                          "description": "客户编号"
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "客户姓名"
+                        },
+                        "phone_masked": {
+                          "type": "string",
+                          "description": "脱敏手机号"
+                        },
+                        "level": {
+                          "type": "string",
+                          "enum": [
+                            "regular",
+                            "vip"
+                          ],
+                          "description": "客户等级（regular 普通 / vip 会员）"
+                        }
+                      },
+                      "type": "object",
+                      "required": [
+                        "customer_id",
+                        "name",
+                        "phone_masked",
+                        "level"
+                      ],
+                      "description": "客户信息"
+                    },
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "sku": {
+                            "type": "string",
+                            "description": "商品编码"
+                          },
+                          "product_name": {
+                            "type": "string",
+                            "description": "商品名称"
+                          },
+                          "category": {
+                            "type": "string",
+                            "enum": [
+                              "electronics",
+                              "clothing",
+                              "home",
+                              "fresh_food",
+                              "custom_made"
+                            ],
+                            "description": "商品类目"
+                          },
+                          "quantity": {
+                            "type": "integer",
+                            "description": "商品数量"
+                          },
+                          "unit_price": {
+                            "type": "number",
+                            "description": "成交单价（元）"
+                          }
+                        },
+                        "type": "object",
+                        "required": [
+                          "sku",
+                          "product_name",
+                          "category",
+                          "quantity",
+                          "unit_price"
+                        ]
+                      },
+                      "type": "array",
+                      "description": "商品明细"
+                    },
+                    "after_sale_tickets": {
+                      "items": {
+                        "properties": {
+                          "ticket_id": {
+                            "type": "string",
+                            "description": "售后工单号"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "return_refund",
+                              "refund_only"
+                            ],
+                            "description": "售后申请类型"
+                          },
+                          "reason_category": {
+                            "type": "string",
+                            "enum": [
+                              "quality_issue",
+                              "no_reason",
+                              "wrong_item",
+                              "damaged_in_transit",
+                              "not_received",
+                              "other"
+                            ],
+                            "description": "售后申请原因类别"
+                          },
+                          "description": {
+                            "type": "string",
+                            "description": "客户描述"
+                          },
+                          "requested_amount": {
+                            "type": "number",
+                            "description": "客户申请金额（元）"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "open",
+                              "resolved",
+                              "rejected"
+                            ],
+                            "description": "工单状态"
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "description": "工单提交时间"
+                          },
+                          "resolved_at": {
+                            "type": "string",
+                            "description": "工单处理完成时间"
+                          }
+                        },
+                        "type": "object",
+                        "required": [
+                          "ticket_id",
+                          "type",
+                          "reason_category",
+                          "description",
+                          "status",
+                          "created_at"
+                        ]
+                      },
+                      "type": "array",
+                      "description": "售后工单列表"
+                    },
+                    "refunds": {
+                      "items": {
+                        "properties": {
+                          "refund_id": {
+                            "type": "string",
+                            "description": "退款单号"
+                          },
+                          "amount": {
+                            "type": "number",
+                            "description": "退款金额（元）"
+                          },
+                          "reason_category": {
+                            "type": "string",
+                            "enum": [
+                              "quality_issue",
+                              "no_reason",
+                              "wrong_item",
+                              "damaged_in_transit",
+                              "not_received",
+                              "other"
+                            ],
+                            "description": "退款原因类别"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "processing",
+                              "succeeded",
+                              "failed"
+                            ],
+                            "description": "退款状态"
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "description": "退款创建时间"
+                          }
+                        },
+                        "type": "object",
+                        "required": [
+                          "refund_id",
+                          "amount",
+                          "reason_category",
+                          "status",
+                          "created_at"
+                        ]
+                      },
+                      "type": "array",
+                      "description": "订单关联退款单列表"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "order_id",
+                    "region",
+                    "status",
+                    "created_at",
+                    "total_amount",
+                    "refunded_amount",
+                    "refundable_amount",
+                    "refund_status",
+                    "customer",
+                    "items",
+                    "after_sale_tickets",
+                    "refunds"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证或身份令牌无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "可直接转述给用户的中文说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "令牌声明无效或无权访问该订单",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "可直接转述给用户的中文说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "订单号不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "可直接转述给用户的中文说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "参数校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    },
+                    "details": {
+                      "type": "array",
+                      "description": "字段级校验错误明细",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "field": {
+                            "type": "string",
+                            "description": "出错字段"
+                          },
+                          "message": {
+                            "type": "string",
+                            "description": "字段校验失败说明"
+                          }
+                        },
+                        "required": [
+                          "field",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "details"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders": {
+      "get": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "查询订单列表",
+        "description": "按客户、订单状态、是否有待处理售后工单筛选订单，按下单时间倒序分页返回订单摘要。结果只包含当前登录人负责区域内的订单，其他区域的订单不会出现在结果中。需要完整信息时再用订单号查询订单详情。",
+        "operationId": "list_orders",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "客户编号，如 C0001"
+            },
+            "description": "客户编号，如 C0001"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "pending_payment",
+                "paid",
+                "shipped",
+                "delivered",
+                "completed",
+                "cancelled"
+              ],
+              "type": "string",
+              "description": "订单状态"
+            },
+            "description": "订单状态"
+          },
+          {
+            "name": "has_open_ticket",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "true 只返回有待处理售后工单的订单，false 只返回没有的"
+            },
+            "description": "true 只返回有待处理售后工单的订单，false 只返回没有的"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码，从 1 开始，默认 1",
+              "default": 1
+            },
+            "description": "页码，从 1 开始，默认 1"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "description": "每页条数，范围 1–50，默认 20",
+              "default": 20
+            },
+            "description": "每页条数，范围 1–50，默认 20"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "order_id": {
+                            "type": "string",
+                            "description": "订单号"
+                          },
+                          "region": {
+                            "type": "string",
+                            "enum": [
+                              "east",
+                              "north",
+                              "south"
+                            ],
+                            "description": "订单所属区域"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending_payment",
+                              "paid",
+                              "shipped",
+                              "delivered",
+                              "completed",
+                              "cancelled"
+                            ],
+                            "description": "订单状态"
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "description": "下单时间"
+                          },
+                          "delivered_at": {
+                            "type": "string",
+                            "description": "签收时间"
+                          },
+                          "days_since_delivery": {
+                            "type": "integer",
+                            "description": "已签收的自然日天数"
+                          },
+                          "total_amount": {
+                            "type": "number",
+                            "description": "订单实付金额（元）"
+                          },
+                          "refund_status": {
+                            "type": "string",
+                            "enum": [
+                              "none",
+                              "partial",
+                              "full"
+                            ],
+                            "description": "退款进度"
+                          },
+                          "customer_id": {
+                            "type": "string",
+                            "description": "客户编号"
+                          },
+                          "customer_name": {
+                            "type": "string",
+                            "description": "客户姓名"
+                          },
+                          "has_open_ticket": {
+                            "type": "boolean",
+                            "description": "是否有待处理的售后工单"
+                          }
+                        },
+                        "type": "object",
+                        "required": [
+                          "order_id",
+                          "region",
+                          "status",
+                          "created_at",
+                          "total_amount",
+                          "refund_status",
+                          "customer_id",
+                          "customer_name",
+                          "has_open_ticket"
+                        ]
+                      },
+                      "type": "array",
+                      "description": "订单摘要列表"
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "符合条件且可见的订单总数"
+                    },
+                    "page": {
+                      "type": "integer",
+                      "description": "当前页码"
+                    },
+                    "page_size": {
+                      "type": "integer",
+                      "description": "每页条数"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "total",
+                    "page",
+                    "page_size"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证或身份令牌无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "可直接转述给用户的中文说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "令牌声明无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "可直接转述给用户的中文说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "参数校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    },
+                    "details": {
+                      "type": "array",
+                      "description": "字段级校验错误明细",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "field": {
+                            "type": "string",
+                            "description": "出错字段"
+                          },
+                          "message": {
+                            "type": "string",
+                            "description": "字段校验失败说明"
+                          }
+                        },
+                        "required": [
+                          "field",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "details"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/refunds/{refund_id}": {
+      "get": {
+        "tags": [
+          "refunds"
+        ],
+        "summary": "查询退款单详情",
+        "description": "按退款单号查询一张退款单的金额、原因、状态和操作人。只能查询当前登录人负责区域内的退款单；不在负责区域返回 403，退款单号不存在返回 404。",
+        "operationId": "get_refund",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "refund_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "退款单号，如 R000105"
+            },
+            "description": "退款单号，如 R000105"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "refund_id": {
+                      "type": "string",
+                      "description": "退款单号"
+                    },
+                    "order_id": {
+                      "type": "string",
+                      "description": "所属订单号"
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "east",
+                        "north",
+                        "south"
+                      ],
+                      "description": "所属区域"
+                    },
+                    "ticket_id": {
+                      "type": "string",
+                      "description": "关联的售后工单号"
+                    },
+                    "amount": {
+                      "type": "number",
+                      "description": "退款金额（元）"
+                    },
+                    "reason_category": {
+                      "type": "string",
+                      "enum": [
+                        "quality_issue",
+                        "no_reason",
+                        "wrong_item",
+                        "damaged_in_transit",
+                        "not_received",
+                        "other"
+                      ],
+                      "description": "退款原因类别"
+                    },
+                    "reason": {
+                      "type": "string",
+                      "description": "退款说明"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "processing",
+                        "succeeded",
+                        "failed"
+                      ],
+                      "description": "退款状态"
+                    },
+                    "created_by": {
+                      "type": "string",
+                      "description": "操作人的用户标识"
+                    },
+                    "created_by_role": {
+                      "type": "string",
+                      "enum": [
+                        "agent",
+                        "supervisor"
+                      ],
+                      "description": "操作人角色"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "description": "创建时间"
+                    },
+                    "completed_at": {
+                      "type": "string",
+                      "description": "完成时间"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "refund_id",
+                    "order_id",
+                    "region",
+                    "amount",
+                    "reason_category",
+                    "reason",
+                    "status",
+                    "created_by",
+                    "created_by_role",
+                    "created_at"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证或身份令牌无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "可直接转述给用户的中文说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "令牌声明无效或无权访问该退款单",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "可直接转述给用户的中文说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "退款单号不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "可直接转述给用户的中文说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "参数校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    },
+                    "details": {
+                      "type": "array",
+                      "description": "字段级校验错误明细",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "field": {
+                            "type": "string",
+                            "description": "出错字段"
+                          },
+                          "message": {
+                            "type": "string",
+                            "description": "字段校验失败说明"
+                          }
+                        },
+                        "required": [
+                          "field",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "details"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/refunds": {
+      "get": {
+        "tags": [
+          "refunds"
+        ],
+        "summary": "查询退款记录（仅主管）",
+        "description": "分页查询当前登录人负责区域内的退款单，可按订单号和退款状态筛选，按创建时间倒序返回。仅主管可用，客服调用返回 403。",
+        "operationId": "list_refunds",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "只看某个订单的退款单"
+            },
+            "description": "只看某个订单的退款单"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "processing",
+                "succeeded",
+                "failed"
+              ],
+              "type": "string",
+              "description": "退款状态"
+            },
+            "description": "退款状态"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码，从 1 开始，默认 1",
+              "default": 1
+            },
+            "description": "页码，从 1 开始，默认 1"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "description": "每页条数，范围 1–50，默认 20",
+              "default": 20
+            },
+            "description": "每页条数，范围 1–50，默认 20"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "refund_id": {
+                            "type": "string",
+                            "description": "退款单号"
+                          },
+                          "order_id": {
+                            "type": "string",
+                            "description": "所属订单号"
+                          },
+                          "region": {
+                            "type": "string",
+                            "enum": [
+                              "east",
+                              "north",
+                              "south"
+                            ],
+                            "description": "所属区域"
+                          },
+                          "ticket_id": {
+                            "type": "string",
+                            "description": "关联的售后工单号"
+                          },
+                          "amount": {
+                            "type": "number",
+                            "description": "退款金额（元）"
+                          },
+                          "reason_category": {
+                            "type": "string",
+                            "enum": [
+                              "quality_issue",
+                              "no_reason",
+                              "wrong_item",
+                              "damaged_in_transit",
+                              "not_received",
+                              "other"
+                            ],
+                            "description": "退款原因类别"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "description": "退款说明"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "processing",
+                              "succeeded",
+                              "failed"
+                            ],
+                            "description": "退款状态"
+                          },
+                          "created_by": {
+                            "type": "string",
+                            "description": "操作人的用户标识"
+                          },
+                          "created_by_role": {
+                            "type": "string",
+                            "enum": [
+                              "agent",
+                              "supervisor"
+                            ],
+                            "description": "操作人角色"
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "description": "创建时间"
+                          },
+                          "completed_at": {
+                            "type": "string",
+                            "description": "完成时间"
+                          }
+                        },
+                        "type": "object",
+                        "required": [
+                          "refund_id",
+                          "order_id",
+                          "region",
+                          "amount",
+                          "reason_category",
+                          "reason",
+                          "status",
+                          "created_by",
+                          "created_by_role",
+                          "created_at"
+                        ]
+                      },
+                      "type": "array",
+                      "description": "退款单列表"
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "符合条件且可见的退款单总数"
+                    },
+                    "page": {
+                      "type": "integer",
+                      "description": "当前页码"
+                    },
+                    "page_size": {
+                      "type": "integer",
+                      "description": "每页条数"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "total",
+                    "page",
+                    "page_size"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证或身份令牌无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "可直接转述给用户的中文说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "令牌声明无效或当前角色无权调用",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "可直接转述给用户的中文说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "参数校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    },
+                    "details": {
+                      "type": "array",
+                      "description": "字段级校验错误明细",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "field": {
+                            "type": "string",
+                            "description": "出错字段"
+                          },
+                          "message": {
+                            "type": "string",
+                            "description": "字段校验失败说明"
+                          }
+                        },
+                        "required": [
+                          "field",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "details"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "refunds"
+        ],
+        "summary": "发起退款【写操作】",
+        "description": "【写操作】为指定订单创建退款单并立即执行退款，会增加订单的已退金额，不可撤销。只能对当前登录人负责区域内的订单操作。订单未支付或已取消、已有处理中的退款、金额超过可退金额时会被拒绝。本接口只校验订单数据，不判断是否符合售后制度。",
+        "operationId": "create_refund",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "order_id": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 1,
+                    "description": "订单号，如 A1023"
+                  },
+                  "amount": {
+                    "type": "number",
+                    "exclusiveMinimum": true,
+                    "description": "退款金额（元），须大于 0 且最多两位小数，不得超过订单可退金额",
+                    "minimum": 0.0
+                  },
+                  "reason_category": {
+                    "type": "string",
+                    "enum": [
+                      "quality_issue",
+                      "no_reason",
+                      "wrong_item",
+                      "damaged_in_transit",
+                      "not_received",
+                      "other"
+                    ],
+                    "description": "退款原因类别"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "description": "退款说明，写明判断依据"
+                  },
+                  "ticket_id": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 1,
+                    "description": "关联的售后工单号（可选）；提供后退款成功时该工单置为已处理"
+                  },
+                  "idempotency_key": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 8,
+                    "pattern": "^[A-Za-z0-9_-]+$",
+                    "description": "幂等键（可选，8–64 位字母数字下划线或连字符）；相同幂等键重复提交不会重复退款"
+                  }
+                },
+                "type": "object",
+                "required": [
+                  "order_id",
+                  "amount",
+                  "reason_category",
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "refund_id": {
+                      "type": "string",
+                      "description": "退款单号"
+                    },
+                    "order_id": {
+                      "type": "string",
+                      "description": "所属订单号"
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "east",
+                        "north",
+                        "south"
+                      ],
+                      "description": "所属区域"
+                    },
+                    "ticket_id": {
+                      "type": "string",
+                      "description": "关联的售后工单号"
+                    },
+                    "amount": {
+                      "type": "number",
+                      "description": "退款金额（元）"
+                    },
+                    "reason_category": {
+                      "type": "string",
+                      "enum": [
+                        "quality_issue",
+                        "no_reason",
+                        "wrong_item",
+                        "damaged_in_transit",
+                        "not_received",
+                        "other"
+                      ],
+                      "description": "退款原因类别"
+                    },
+                    "reason": {
+                      "type": "string",
+                      "description": "退款说明"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "processing",
+                        "succeeded",
+                        "failed"
+                      ],
+                      "description": "退款状态"
+                    },
+                    "created_by": {
+                      "type": "string",
+                      "description": "操作人的用户标识"
+                    },
+                    "created_by_role": {
+                      "type": "string",
+                      "enum": [
+                        "agent",
+                        "supervisor"
+                      ],
+                      "description": "操作人角色"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "description": "创建时间"
+                    },
+                    "completed_at": {
+                      "type": "string",
+                      "description": "完成时间"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "refund_id",
+                    "order_id",
+                    "region",
+                    "amount",
+                    "reason_category",
+                    "reason",
+                    "status",
+                    "created_by",
+                    "created_by_role",
+                    "created_at"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证或身份令牌无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "可直接转述给用户的中文说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "令牌声明无效或无权操作该订单",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "可直接转述给用户的中文说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "订单号不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "可直接转述给用户的中文说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "业务规则冲突（不可退、超额、处理中、幂等冲突等）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "可直接转述给用户的中文说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "参数校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "机器可读错误码"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "description": "请求追踪 ID"
+                    },
+                    "details": {
+                      "type": "array",
+                      "description": "字段级校验错误明细",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "field": {
+                            "type": "string",
+                            "description": "出错字段"
+                          },
+                          "message": {
+                            "type": "string",
+                            "description": "字段校验失败说明"
+                          }
+                        },
+                        "required": [
+                          "field",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "details"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://mock-api:8000"
+    }
+  ]
+}

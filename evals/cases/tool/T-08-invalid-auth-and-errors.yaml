@@ -1,0 +1,83 @@
+id: T-08
+title: 无效身份在入口 401 拒绝不留审计，404 与 422 错误原样传达
+layer: tool
+category: identity
+orders: [A1023]
+unknown_ids: [X9999]
+steps:
+  - id: s1
+    do: mcp
+    as: wang
+    token: none
+    tool: get_order
+    args: {order_id: A1023}
+    expect:
+      result: auth
+      status: 401
+
+  - id: s2
+    do: mcp
+    as: wang
+    token: expired
+    tool: get_order
+    args: {order_id: A1023}
+    expect:
+      result: auth
+      status: 401
+
+  - id: s3
+    do: mcp
+    as: wang
+    token: tampered
+    tool: get_order
+    args: {order_id: A1023}
+    expect:
+      result: auth
+      status: 401
+
+  - id: s4
+    do: mcp
+    as: wang
+    tool: get_order
+    args: {order_id: X9999}
+    expect:
+      result: not_found
+      status: 404
+      error_code: order_not_found
+
+  - id: s5
+    do: mcp
+    as: wang
+    tool: create_refund
+    args:
+      order_id: X9999
+      amount: 10
+      reason_category: other
+      reason: 评测用例 T-08
+    expect:
+      result: not_found
+      status: 404
+      error_code: order_not_found
+
+  - id: s6
+    do: mcp
+    as: wang
+    tool: create_refund
+    args:
+      order_id: A1023
+      amount: -1
+      reason_category: quality_issue
+      reason: 评测用例 T-08
+    expect:
+      result: invalid
+      status: 422
+      error_code: validation_error
+
+  - id: p1
+    do: mcp
+    as: sun
+    tool: list_approvals
+    args: {}
+    expect:
+      result: ok
+      data: {total: 0}

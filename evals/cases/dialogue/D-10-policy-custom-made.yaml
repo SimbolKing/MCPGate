@@ -1,0 +1,16 @@
+id: D-10
+title: 制度场景：定制商品不支持无理由退货（A1027）
+layer: dialogue
+category: policy
+orders: [A1027]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    query: 订单 A1027 能退吗？
+    expect:
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: A1027}]}
+        verdict: not_refundable
+        clauses: [{doc: 售后制度, clause: "4.2"}]
+        citations: [{doc: 售后制度, clause: "4.2"}]

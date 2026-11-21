@@ -1,0 +1,16 @@
+id: D-08
+title: 制度场景：第 7 天边界仍在无理由期限内（A1036）
+layer: dialogue
+category: policy
+orders: [A1036]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    query: 订单 A1036 能退吗？
+    expect:
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: A1036}]}
+        verdict: refundable
+        clauses: [{doc: 售后制度, clause: "2.1"}]
+        citations: [{doc: 售后制度, clause: "2.1"}]

@@ -1,0 +1,89 @@
+id: G-05
+title: 拒绝必填意见、拒绝后不可同意且可重新提交新申请
+layer: guard
+category: approval
+orders: [A1036]
+steps:
+  - id: s1
+    do: mcp
+    as: wang
+    tool: create_refund
+    args:
+      order_id: A1036
+      amount: 329
+      reason_category: no_reason
+      reason: 评测用例 G-05
+      ticket_id: T5011
+    save:
+      ap1: data.approval_id
+    expect:
+      result: pending
+      data:
+        approval_id: AP000001
+        status: pending
+
+  - id: s2
+    do: guard
+    as: li
+    call: reject
+    approval: "${ap1}"
+    expect:
+      status: 422
+      error_code: validation_error
+
+  - id: s3
+    do: guard
+    as: li
+    call: reject
+    approval: "${ap1}"
+    comment: 金额有误
+    expect:
+      status: 200
+      data: {status: rejected}
+
+  - id: s4
+    do: guard
+    as: li
+    call: approve
+    approval: "${ap1}"
+    comment: 同意
+    expect:
+      status: 409
+      error_code: approval_not_pending
+
+  - id: p1
+    do: mcp
+    as: wang
+    tool: get_approval
+    args: {approval_id: "${ap1}"}
+    expect:
+      result: ok
+      data: {status: rejected}
+      message_contains: [金额有误, 退款未执行]
+
+  - id: p2
+    do: mcp
+    as: li
+    tool: get_order
+    args: {order_id: A1036}
+    expect:
+      result: ok
+      data:
+        refunded_amount: 0
+        "length(refunds)": 0
+
+  - id: s5
+    do: mcp
+    as: wang
+    tool: create_refund
+    args:
+      order_id: A1036
+      amount: 329
+      reason_category: no_reason
+      reason: 评测用例 G-05
+      ticket_id: T5011
+    expect:
+      result: pending
+      data:
+        approval_id: AP000002
+        status: pending

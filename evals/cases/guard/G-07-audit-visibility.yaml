@@ -1,0 +1,88 @@
+id: G-07
+title: 审计查询的角色限制、区域可见范围与越权记录字段
+layer: guard
+category: audit
+orders: [A1023, B2087]
+fresh: true
+steps:
+  - id: s1
+    do: mcp
+    as: wang
+    tool: get_order
+    args: {order_id: A1023}
+    expect:
+      result: ok
+      data: {order_id: A1023}
+
+  - id: s2
+    do: mcp
+    as: wang
+    tool: get_order
+    args: {order_id: B2087}
+    authz: deny
+    target: B2087
+    expect:
+      result: denied
+      status: 403
+      error_code: order_access_denied
+
+  - id: s3
+    do: mcp
+    as: zhao
+    tool: get_order
+    args: {order_id: B2087}
+    expect:
+      result: ok
+      data: {order_id: B2087}
+
+  - id: s4
+    do: guard
+    as: wang
+    call: audit_logs
+    authz: deny
+    expect:
+      status: 403
+      error_code: insufficient_role
+
+  - id: s5
+    do: guard
+    as: zhou
+    call: audit_logs
+    params: {actor: u1001}
+    authz: filter
+    expect:
+      status: 200
+      data: {total: 0}
+
+  - id: s6
+    do: guard
+    as: li
+    call: audit_logs
+    params: {actor: u1002}
+    authz: filter
+    expect:
+      status: 200
+      data: {total: 0}
+
+  - id: s7
+    do: guard
+    as: li
+    call: audit_logs
+    params: {actor: u1001}
+    expect:
+      status: 200
+      data:
+        total: 2
+        "items[?order_id=='B2087'].outcome | [0]": access_denied
+        "items[?order_id=='B2087'].status_code | [0]": 403
+        "items[?order_id=='B2087'].error_code | [0]": order_access_denied
+        "items[?order_id=='B2087'].resource_region | [0]": null
+
+  - id: s8
+    do: guard
+    as: sun
+    call: audit_logs
+    params: {outcome: access_denied}
+    expect:
+      status: 200
+      data: {total: 1}

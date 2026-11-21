@@ -1,0 +1,16 @@
+id: D-06
+title: 制度场景：7 天内无理由退货（C3051）
+layer: dialogue
+category: policy
+orders: [C3051]
+steps:
+  - id: t1
+    do: chat
+    as: chen
+    query: 订单 C3051 的客户想退货，能退吗？
+    expect:
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: C3051}]}
+        verdict: refundable
+        clauses: [{doc: 售后制度, clause: "2.1"}]
+        citations: [{doc: 售后制度, clause: "2.1"}]

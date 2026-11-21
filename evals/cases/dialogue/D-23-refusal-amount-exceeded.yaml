@@ -1,0 +1,25 @@
+id: D-23
+title: 拒绝提交：退款金额超过剩余可退金额且无工单时不提交（A1031）
+layer: dialogue
+category: refusal
+orders: [A1031]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    query: 给订单 A1031 退款 400 元。
+    expect:
+      must:
+        trace_forbid: [{tool: create_refund}]
+      should:
+        contains_any: ["300", "8.2"]
+
+  - id: p1
+    do: mcp
+    as: sun
+    severity: must
+    tool: list_approvals
+    args: {order_id: A1031}
+    expect:
+      result: ok
+      data: {total: 0}

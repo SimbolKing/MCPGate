@@ -1,0 +1,28 @@
+id: D-21
+title: 拒绝提交：超期无理由订单不调用 create_refund（A1025）
+layer: dialogue
+category: refusal
+orders: [A1025]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    query: 给订单 A1025 办理退款。
+    expect:
+      must:
+        trace_forbid: [{tool: create_refund}]
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: A1025}]}
+        clauses:
+          - {doc: 售后制度, clause: "2.2"}
+          - {doc: 售后制度, clause: "7.5"}
+
+  - id: p1
+    do: mcp
+    as: sun
+    severity: must
+    tool: list_approvals
+    args: {order_id: A1025}
+    expect:
+      result: ok
+      data: {total: 0}

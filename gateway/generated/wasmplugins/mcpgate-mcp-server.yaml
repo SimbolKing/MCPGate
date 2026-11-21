@@ -1,0 +1,1131 @@
+apiVersion: extensions.higress.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: mcpgate-mcp-server
+  namespace: higress-system
+  creationTimestamp: '2000-01-01T00:00:00Z'
+  resourceVersion: '1'
+spec:
+  url: http://localhost:8002/plugins/mcp-server/2.0.3/plugin.wasm
+  phase: UNSPECIFIED_PHASE
+  priority: 30
+  failStrategy: FAIL_CLOSE
+  defaultConfigDisable: true
+  matchRules:
+  - ingress:
+    - aftersale-mcp
+    configDisable: false
+    config:
+      server:
+        name: aftersale
+        securitySchemes:
+        - id: BearerAuth
+          type: http
+          scheme: bearer
+      tools:
+      - name: create_refund
+        description: 提交退款申请【写操作】 - 【写操作】为指定订单提交一笔退款申请。申请不会立即执行：需要负责该区域的主管在审批页同意后，退款才会在订单系统中执行。调用成功只表示申请已提交，返回审批单号 approval_id 和状态 pending，此时退款尚未发生，不要告诉用户"已退款"。只能对当前登录人负责区域内的订单提交；同一订单已有待审批的申请时会被拒绝。之后用 get_approval 查询审批结果。
+        args:
+        - name: amount
+          description: 退款金额（元），须大于 0 且最多两位小数，不得超过订单可退金额
+          type: number
+          required: true
+          position: body
+        - name: idempotency_key
+          description: 幂等键（可选，8–64 位字母数字下划线或连字符）；相同幂等键重复提交不会重复退款
+          type: string
+          position: body
+        - name: order_id
+          description: 订单号，如 A1023
+          type: string
+          required: true
+          position: body
+        - name: reason
+          description: 退款说明，写明判断依据
+          type: string
+          required: true
+          position: body
+        - name: reason_category
+          description: 退款原因类别
+          type: string
+          required: true
+          enum:
+          - quality_issue
+          - no_reason
+          - wrong_item
+          - damaged_in_transit
+          - not_received
+          - other
+          position: body
+        - name: ticket_id
+          description: 关联的售后工单号（可选）；提供后退款成功时该工单置为已处理
+          type: string
+          position: body
+        requestTemplate:
+          url: http://mock-api:8000/api/v1/refunds
+          method: POST
+          headers:
+          - key: Content-Type
+            value: application/json
+          security:
+            id: BearerAuth
+        responseTemplate:
+          prependBody: |+
+            # 退款申请（审批单）字段说明
+
+            - **approval_id**: 审批单号，如 AP000001 (Type: string)
+            - **status**: pending 待审批 / executing 已同意执行中 / executed 已执行 / execution_failed 已同意但执行失败 / rejected 已拒绝 / expired 已过期 (Type: string)
+            - **message**: 当前状态的中文说明，可直接转述给用户 (Type: string)
+            - **tool**: 申请对应的写操作，当前为 create_refund (Type: string)
+            - **order_id**: 订单号 (Type: string)
+            - **region**: 订单所属区域 (Type: string)
+            - **amount**: 申请退款金额（元） (Type: number)
+            - **reason_category**: 退款原因类别 (Type: string)
+            - **reason**: 退款说明 (Type: string)
+            - **ticket_id**: 关联的售后工单号 (Type: string)
+            - **applicant_sub**: 申请人的用户标识 (Type: string)
+            - **applicant_name**: 申请人姓名 (Type: string)
+            - **submitted_at**: 提交时间 (Type: string)
+            - **expires_at**: 审批截止时间 (Type: string)
+            - **decided_by_sub**: 审批主管的用户标识 (Type: string)
+            - **decided_by_name**: 审批主管姓名 (Type: string)
+            - **decided_at**: 审批时间 (Type: string)
+            - **decision_comment**: 审批意见 (Type: string)
+            - **refund_id**: 执行成功后的退款单号，可用 get_refund 查询 (Type: string)
+            - **executed_at**: 执行成功的时间 (Type: string)
+            - **failure_code**: 执行失败时订单系统的错误码 (Type: string)
+            - **failure_message**: 执行失败时订单系统的说明 (Type: string)
+
+            ## Original Response
+
+        security:
+          id: BearerAuth
+          passthrough: true
+        outputSchema:
+          type: object
+          required:
+          - approval_id
+          - status
+          - message
+          - tool
+          - order_id
+          - region
+          - amount
+          - reason_category
+          - reason
+          - applicant_sub
+          - submitted_at
+          - expires_at
+          properties:
+            approval_id:
+              type: string
+              description: 审批单号，如 AP000001
+            status:
+              type: string
+              enum:
+              - pending
+              - executing
+              - executed
+              - execution_failed
+              - rejected
+              - expired
+              description: pending 待审批 / executing 已同意执行中 / executed 已执行 / execution_failed 已同意但执行失败 / rejected 已拒绝 / expired 已过期
+            message:
+              type: string
+              description: 当前状态的中文说明，可直接转述给用户
+            tool:
+              type: string
+              description: 申请对应的写操作，当前为 create_refund
+            order_id:
+              type: string
+              description: 订单号
+            region:
+              type: string
+              enum:
+              - east
+              - north
+              - south
+              description: 订单所属区域
+            amount:
+              type: number
+              description: 申请退款金额（元）
+            reason_category:
+              type: string
+              enum:
+              - quality_issue
+              - no_reason
+              - wrong_item
+              - damaged_in_transit
+              - not_received
+              - other
+              description: 退款原因类别
+            reason:
+              type: string
+              description: 退款说明
+            ticket_id:
+              type: string
+              description: 关联的售后工单号
+            applicant_sub:
+              type: string
+              description: 申请人的用户标识
+            applicant_name:
+              type: string
+              description: 申请人姓名
+            submitted_at:
+              type: string
+              description: 提交时间
+            expires_at:
+              type: string
+              description: 审批截止时间
+            decided_by_sub:
+              type: string
+              description: 审批主管的用户标识
+            decided_by_name:
+              type: string
+              description: 审批主管姓名
+            decided_at:
+              type: string
+              description: 审批时间
+            decision_comment:
+              type: string
+              description: 审批意见
+            refund_id:
+              type: string
+              description: 执行成功后的退款单号，可用 get_refund 查询
+            executed_at:
+              type: string
+              description: 执行成功的时间
+            failure_code:
+              type: string
+              description: 执行失败时订单系统的错误码
+            failure_message:
+              type: string
+              description: 执行失败时订单系统的说明
+      - name: get_approval
+        description: 查询退款申请进度 - 按审批单号查询一笔退款申请的审批状态与执行结果：待审批、已执行（含退款单号）、已同意但执行失败（含原因）、已拒绝（含主管意见）、已过期。返回的 message 可直接转述。只能查询当前登录人负责区域内的申请；不在负责区域返回 403，单号不存在返回 404。
+        args:
+        - name: approval_id
+          description: 审批单号，如 AP000001
+          type: string
+          required: true
+          position: path
+        requestTemplate:
+          url: http://guard:8020/guard/v1/approvals/{approval_id}
+          method: GET
+          security:
+            id: BearerAuth
+        security:
+          id: BearerAuth
+          passthrough: true
+        responseTemplate:
+          prependBody: |+
+            # 退款申请（审批单）字段说明
+
+            - **approval_id**: 审批单号，如 AP000001 (Type: string)
+            - **status**: pending 待审批 / executing 已同意执行中 / executed 已执行 / execution_failed 已同意但执行失败 / rejected 已拒绝 / expired 已过期 (Type: string)
+            - **message**: 当前状态的中文说明，可直接转述给用户 (Type: string)
+            - **tool**: 申请对应的写操作，当前为 create_refund (Type: string)
+            - **order_id**: 订单号 (Type: string)
+            - **region**: 订单所属区域 (Type: string)
+            - **amount**: 申请退款金额（元） (Type: number)
+            - **reason_category**: 退款原因类别 (Type: string)
+            - **reason**: 退款说明 (Type: string)
+            - **ticket_id**: 关联的售后工单号 (Type: string)
+            - **applicant_sub**: 申请人的用户标识 (Type: string)
+            - **applicant_name**: 申请人姓名 (Type: string)
+            - **submitted_at**: 提交时间 (Type: string)
+            - **expires_at**: 审批截止时间 (Type: string)
+            - **decided_by_sub**: 审批主管的用户标识 (Type: string)
+            - **decided_by_name**: 审批主管姓名 (Type: string)
+            - **decided_at**: 审批时间 (Type: string)
+            - **decision_comment**: 审批意见 (Type: string)
+            - **refund_id**: 执行成功后的退款单号，可用 get_refund 查询 (Type: string)
+            - **executed_at**: 执行成功的时间 (Type: string)
+            - **failure_code**: 执行失败时订单系统的错误码 (Type: string)
+            - **failure_message**: 执行失败时订单系统的说明 (Type: string)
+
+            ## Original Response
+
+        outputSchema:
+          type: object
+          required:
+          - approval_id
+          - status
+          - message
+          - tool
+          - order_id
+          - region
+          - amount
+          - reason_category
+          - reason
+          - applicant_sub
+          - submitted_at
+          - expires_at
+          properties:
+            approval_id:
+              type: string
+              description: 审批单号，如 AP000001
+            status:
+              type: string
+              enum:
+              - pending
+              - executing
+              - executed
+              - execution_failed
+              - rejected
+              - expired
+              description: pending 待审批 / executing 已同意执行中 / executed 已执行 / execution_failed 已同意但执行失败 / rejected 已拒绝 / expired 已过期
+            message:
+              type: string
+              description: 当前状态的中文说明，可直接转述给用户
+            tool:
+              type: string
+              description: 申请对应的写操作，当前为 create_refund
+            order_id:
+              type: string
+              description: 订单号
+            region:
+              type: string
+              enum:
+              - east
+              - north
+              - south
+              description: 订单所属区域
+            amount:
+              type: number
+              description: 申请退款金额（元）
+            reason_category:
+              type: string
+              enum:
+              - quality_issue
+              - no_reason
+              - wrong_item
+              - damaged_in_transit
+              - not_received
+              - other
+              description: 退款原因类别
+            reason:
+              type: string
+              description: 退款说明
+            ticket_id:
+              type: string
+              description: 关联的售后工单号
+            applicant_sub:
+              type: string
+              description: 申请人的用户标识
+            applicant_name:
+              type: string
+              description: 申请人姓名
+            submitted_at:
+              type: string
+              description: 提交时间
+            expires_at:
+              type: string
+              description: 审批截止时间
+            decided_by_sub:
+              type: string
+              description: 审批主管的用户标识
+            decided_by_name:
+              type: string
+              description: 审批主管姓名
+            decided_at:
+              type: string
+              description: 审批时间
+            decision_comment:
+              type: string
+              description: 审批意见
+            refund_id:
+              type: string
+              description: 执行成功后的退款单号，可用 get_refund 查询
+            executed_at:
+              type: string
+              description: 执行成功的时间
+            failure_code:
+              type: string
+              description: 执行失败时订单系统的错误码
+            failure_message:
+              type: string
+              description: 执行失败时订单系统的说明
+      - name: get_order
+        description: 查询订单详情 - 按订单号查询一笔订单的完整信息：状态、金额、签收时间与已签收天数、商品及类目、客户等级、售后工单、已有退款。只返回事实数据，不判断是否符合售后制度。只能查询当前登录人负责区域内的订单；订单不在负责区域返回 403，订单号不存在返回 404。
+        args:
+        - name: order_id
+          description: 订单号，如 A1023
+          type: string
+          required: true
+          position: path
+        requestTemplate:
+          url: http://mock-api:8000/api/v1/orders/{order_id}
+          method: GET
+          security:
+            id: BearerAuth
+        responseTemplate:
+          prependBody: |+
+            # API Response Information
+
+            Below is the response from an API call. To help you understand the data, I've provided:
+
+            1. A detailed description of all fields in the response structure
+            2. The complete API response
+
+            ## Response Structure
+
+            > Content-Type: application/json
+
+            - **after_sale_tickets**: 售后工单列表 (Type: array)
+              - **after_sale_tickets[].created_at**: 工单提交时间 (Type: string)
+              - **after_sale_tickets[].description**: 客户描述 (Type: string)
+              - **after_sale_tickets[].reason_category**: 售后申请原因类别 (Type: string)
+              - **after_sale_tickets[].requested_amount**: 客户申请金额（元） (Type: number)
+              - **after_sale_tickets[].resolved_at**: 工单处理完成时间 (Type: string)
+              - **after_sale_tickets[].status**: 工单状态 (Type: string)
+              - **after_sale_tickets[].ticket_id**: 售后工单号 (Type: string)
+              - **after_sale_tickets[].type**: 售后申请类型 (Type: string)
+            - **created_at**: 下单时间 (Type: string)
+            - **customer**: 客户信息 (Type: object)
+              - **customer.customer_id**: 客户编号 (Type: string)
+              - **customer.level**: 客户等级（regular 普通 / vip 会员） (Type: string)
+              - **customer.name**: 客户姓名 (Type: string)
+              - **customer.phone_masked**: 脱敏手机号 (Type: string)
+            - **days_since_delivery**: 已签收的自然日天数，签收当天为 0 (Type: integer)
+            - **delivered_at**: 签收时间 (Type: string)
+            - **items**: 商品明细 (Type: array)
+              - **items[].category**: 商品类目 (Type: string)
+              - **items[].product_name**: 商品名称 (Type: string)
+              - **items[].quantity**: 商品数量 (Type: integer)
+              - **items[].sku**: 商品编码 (Type: string)
+              - **items[].unit_price**: 成交单价（元） (Type: number)
+            - **order_id**: 订单号 (Type: string)
+            - **paid_at**: 支付时间 (Type: string)
+            - **refund_status**: 退款进度（none / partial / full） (Type: string)
+            - **refundable_amount**: 当前还可退金额（元） (Type: number)
+            - **refunded_amount**: 已成功退款累计金额（元） (Type: number)
+            - **refunds**: 订单关联退款单列表 (Type: array)
+              - **refunds[].amount**: 退款金额（元） (Type: number)
+              - **refunds[].created_at**: 退款创建时间 (Type: string)
+              - **refunds[].reason_category**: 退款原因类别 (Type: string)
+              - **refunds[].refund_id**: 退款单号 (Type: string)
+              - **refunds[].status**: 退款状态 (Type: string)
+            - **region**: 订单所属区域 (Type: string)
+            - **shipped_at**: 发货时间 (Type: string)
+            - **status**: 订单状态 (Type: string)
+            - **total_amount**: 订单实付金额（元） (Type: number)
+
+            ## Original Response
+
+        security:
+          id: BearerAuth
+          passthrough: true
+        outputSchema:
+          description: Successful Response
+          properties:
+            after_sale_tickets:
+              description: 售后工单列表
+              items:
+                properties:
+                  created_at:
+                    description: 工单提交时间
+                    type: string
+                  description:
+                    description: 客户描述
+                    type: string
+                  reason_category:
+                    description: 售后申请原因类别
+                    type: string
+                  requested_amount:
+                    description: 客户申请金额（元）
+                    type: number
+                  resolved_at:
+                    description: 工单处理完成时间
+                    type: string
+                  status:
+                    description: 工单状态
+                    type: string
+                  ticket_id:
+                    description: 售后工单号
+                    type: string
+                  type:
+                    description: 售后申请类型
+                    type: string
+                required:
+                - ticket_id
+                - type
+                - reason_category
+                - description
+                - status
+                - created_at
+                type: object
+              type: array
+            created_at:
+              description: 下单时间
+              type: string
+            customer:
+              description: 客户信息
+              properties:
+                customer_id:
+                  description: 客户编号
+                  type: string
+                level:
+                  description: 客户等级（regular 普通 / vip 会员）
+                  type: string
+                name:
+                  description: 客户姓名
+                  type: string
+                phone_masked:
+                  description: 脱敏手机号
+                  type: string
+              required:
+              - customer_id
+              - name
+              - phone_masked
+              - level
+              type: object
+            days_since_delivery:
+              description: 已签收的自然日天数，签收当天为 0
+              type: integer
+            delivered_at:
+              description: 签收时间
+              type: string
+            items:
+              description: 商品明细
+              items:
+                properties:
+                  category:
+                    description: 商品类目
+                    type: string
+                  product_name:
+                    description: 商品名称
+                    type: string
+                  quantity:
+                    description: 商品数量
+                    type: integer
+                  sku:
+                    description: 商品编码
+                    type: string
+                  unit_price:
+                    description: 成交单价（元）
+                    type: number
+                required:
+                - sku
+                - product_name
+                - category
+                - quantity
+                - unit_price
+                type: object
+              type: array
+            order_id:
+              description: 订单号
+              type: string
+            paid_at:
+              description: 支付时间
+              type: string
+            refund_status:
+              description: 退款进度（none / partial / full）
+              type: string
+            refundable_amount:
+              description: 当前还可退金额（元）
+              type: number
+            refunded_amount:
+              description: 已成功退款累计金额（元）
+              type: number
+            refunds:
+              description: 订单关联退款单列表
+              items:
+                properties:
+                  amount:
+                    description: 退款金额（元）
+                    type: number
+                  created_at:
+                    description: 退款创建时间
+                    type: string
+                  reason_category:
+                    description: 退款原因类别
+                    type: string
+                  refund_id:
+                    description: 退款单号
+                    type: string
+                  status:
+                    description: 退款状态
+                    type: string
+                required:
+                - refund_id
+                - amount
+                - reason_category
+                - status
+                - created_at
+                type: object
+              type: array
+            region:
+              description: 订单所属区域
+              type: string
+            shipped_at:
+              description: 发货时间
+              type: string
+            status:
+              description: 订单状态
+              type: string
+            total_amount:
+              description: 订单实付金额（元）
+              type: number
+          required:
+          - order_id
+          - region
+          - status
+          - created_at
+          - total_amount
+          - refunded_amount
+          - refundable_amount
+          - refund_status
+          - customer
+          - items
+          - after_sale_tickets
+          - refunds
+          type: object
+      - name: get_refund
+        description: 查询退款单详情 - 按退款单号查询一张退款单的金额、原因、状态和操作人。只能查询当前登录人负责区域内的退款单；不在负责区域返回 403，退款单号不存在返回 404。
+        args:
+        - name: refund_id
+          description: 退款单号，如 R000105
+          type: string
+          required: true
+          position: path
+        requestTemplate:
+          url: http://mock-api:8000/api/v1/refunds/{refund_id}
+          method: GET
+          security:
+            id: BearerAuth
+        responseTemplate:
+          prependBody: |+
+            # API Response Information
+
+            Below is the response from an API call. To help you understand the data, I've provided:
+
+            1. A detailed description of all fields in the response structure
+            2. The complete API response
+
+            ## Response Structure
+
+            > Content-Type: application/json
+
+            - **amount**: 退款金额（元） (Type: number)
+            - **completed_at**: 完成时间 (Type: string)
+            - **created_at**: 创建时间 (Type: string)
+            - **created_by**: 操作人的用户标识 (Type: string)
+            - **created_by_role**: 操作人角色 (Type: string)
+            - **order_id**: 所属订单号 (Type: string)
+            - **reason**: 退款说明 (Type: string)
+            - **reason_category**: 退款原因类别 (Type: string)
+            - **refund_id**: 退款单号 (Type: string)
+            - **region**: 所属区域 (Type: string)
+            - **status**: 退款状态 (Type: string)
+            - **ticket_id**: 关联的售后工单号 (Type: string)
+
+            ## Original Response
+
+        security:
+          id: BearerAuth
+          passthrough: true
+        outputSchema:
+          description: Successful Response
+          properties:
+            amount:
+              description: 退款金额（元）
+              type: number
+            completed_at:
+              description: 完成时间
+              type: string
+            created_at:
+              description: 创建时间
+              type: string
+            created_by:
+              description: 操作人的用户标识
+              type: string
+            created_by_role:
+              description: 操作人角色
+              type: string
+            order_id:
+              description: 所属订单号
+              type: string
+            reason:
+              description: 退款说明
+              type: string
+            reason_category:
+              description: 退款原因类别
+              type: string
+            refund_id:
+              description: 退款单号
+              type: string
+            region:
+              description: 所属区域
+              type: string
+            status:
+              description: 退款状态
+              type: string
+            ticket_id:
+              description: 关联的售后工单号
+              type: string
+          required:
+          - refund_id
+          - order_id
+          - region
+          - amount
+          - reason_category
+          - reason
+          - status
+          - created_by
+          - created_by_role
+          - created_at
+          type: object
+      - name: list_approvals
+        description: 查询退款申请列表 - 按订单号和审批状态筛选退款申请，按提交时间倒序分页返回。不知道审批单号时，用订单号查该订单的申请记录。结果只包含当前登录人负责区域内的申请。退款申请是尚待主管审批或已有审批结论的申请单，不同于已执行的退款单（退款单用 get_refund 查询）。
+        args:
+        - name: order_id
+          description: 只看某个订单的退款申请，如 A1023
+          type: string
+          position: query
+        - name: status
+          description: 审批状态
+          type: string
+          position: query
+          enum:
+          - pending
+          - executing
+          - executed
+          - execution_failed
+          - rejected
+          - expired
+        - name: page
+          description: 页码，从 1 开始，默认 1
+          type: integer
+          position: query
+        - name: page_size
+          description: 每页条数，1–50，默认 20
+          type: integer
+          position: query
+        requestTemplate:
+          url: http://guard:8020/guard/v1/approvals
+          method: GET
+          security:
+            id: BearerAuth
+        security:
+          id: BearerAuth
+          passthrough: true
+        responseTemplate:
+          prependBody: |+
+            # 退款申请（审批单）字段说明
+
+            - **approval_id**: 审批单号，如 AP000001 (Type: string)
+            - **status**: pending 待审批 / executing 已同意执行中 / executed 已执行 / execution_failed 已同意但执行失败 / rejected 已拒绝 / expired 已过期 (Type: string)
+            - **message**: 当前状态的中文说明，可直接转述给用户 (Type: string)
+            - **tool**: 申请对应的写操作，当前为 create_refund (Type: string)
+            - **order_id**: 订单号 (Type: string)
+            - **region**: 订单所属区域 (Type: string)
+            - **amount**: 申请退款金额（元） (Type: number)
+            - **reason_category**: 退款原因类别 (Type: string)
+            - **reason**: 退款说明 (Type: string)
+            - **ticket_id**: 关联的售后工单号 (Type: string)
+            - **applicant_sub**: 申请人的用户标识 (Type: string)
+            - **applicant_name**: 申请人姓名 (Type: string)
+            - **submitted_at**: 提交时间 (Type: string)
+            - **expires_at**: 审批截止时间 (Type: string)
+            - **decided_by_sub**: 审批主管的用户标识 (Type: string)
+            - **decided_by_name**: 审批主管姓名 (Type: string)
+            - **decided_at**: 审批时间 (Type: string)
+            - **decision_comment**: 审批意见 (Type: string)
+            - **refund_id**: 执行成功后的退款单号，可用 get_refund 查询 (Type: string)
+            - **executed_at**: 执行成功的时间 (Type: string)
+            - **failure_code**: 执行失败时订单系统的错误码 (Type: string)
+            - **failure_message**: 执行失败时订单系统的说明 (Type: string)
+
+            ## Original Response
+
+        outputSchema:
+          type: object
+          required:
+          - items
+          - total
+          - page
+          - page_size
+          properties:
+            items:
+              type: array
+              description: 退款申请（审批单）列表
+              items:
+                type: object
+                required:
+                - approval_id
+                - status
+                - message
+                - tool
+                - order_id
+                - region
+                - amount
+                - reason_category
+                - reason
+                - applicant_sub
+                - submitted_at
+                - expires_at
+                properties:
+                  approval_id:
+                    type: string
+                    description: 审批单号，如 AP000001
+                  status:
+                    type: string
+                    enum:
+                    - pending
+                    - executing
+                    - executed
+                    - execution_failed
+                    - rejected
+                    - expired
+                    description: pending 待审批 / executing 已同意执行中 / executed 已执行 / execution_failed 已同意但执行失败 / rejected 已拒绝 / expired 已过期
+                  message:
+                    type: string
+                    description: 当前状态的中文说明，可直接转述给用户
+                  tool:
+                    type: string
+                    description: 申请对应的写操作，当前为 create_refund
+                  order_id:
+                    type: string
+                    description: 订单号
+                  region:
+                    type: string
+                    enum:
+                    - east
+                    - north
+                    - south
+                    description: 订单所属区域
+                  amount:
+                    type: number
+                    description: 申请退款金额（元）
+                  reason_category:
+                    type: string
+                    enum:
+                    - quality_issue
+                    - no_reason
+                    - wrong_item
+                    - damaged_in_transit
+                    - not_received
+                    - other
+                    description: 退款原因类别
+                  reason:
+                    type: string
+                    description: 退款说明
+                  ticket_id:
+                    type: string
+                    description: 关联的售后工单号
+                  applicant_sub:
+                    type: string
+                    description: 申请人的用户标识
+                  applicant_name:
+                    type: string
+                    description: 申请人姓名
+                  submitted_at:
+                    type: string
+                    description: 提交时间
+                  expires_at:
+                    type: string
+                    description: 审批截止时间
+                  decided_by_sub:
+                    type: string
+                    description: 审批主管的用户标识
+                  decided_by_name:
+                    type: string
+                    description: 审批主管姓名
+                  decided_at:
+                    type: string
+                    description: 审批时间
+                  decision_comment:
+                    type: string
+                    description: 审批意见
+                  refund_id:
+                    type: string
+                    description: 执行成功后的退款单号，可用 get_refund 查询
+                  executed_at:
+                    type: string
+                    description: 执行成功的时间
+                  failure_code:
+                    type: string
+                    description: 执行失败时订单系统的错误码
+                  failure_message:
+                    type: string
+                    description: 执行失败时订单系统的说明
+            total:
+              type: integer
+              description: 符合条件且可见的退款申请总数
+            page:
+              type: integer
+              description: 当前页码
+            page_size:
+              type: integer
+              description: 每页条数
+      - name: list_orders
+        description: 查询订单列表 - 按客户、订单状态、是否有待处理售后工单筛选订单，按下单时间倒序分页返回订单摘要。结果只包含当前登录人负责区域内的订单，其他区域的订单不会出现在结果中。需要完整信息时再用订单号查询订单详情。
+        args:
+        - name: customer_id
+          description: 客户编号，如 C0001
+          type: string
+          position: query
+        - name: has_open_ticket
+          description: true 只返回有待处理售后工单的订单，false 只返回没有的
+          type: boolean
+          position: query
+        - name: page
+          description: 页码，从 1 开始，默认 1
+          type: integer
+          position: query
+        - name: page_size
+          description: 每页条数，范围 1–50，默认 20
+          type: integer
+          position: query
+        - name: status
+          description: 订单状态
+          type: string
+          enum:
+          - pending_payment
+          - paid
+          - shipped
+          - delivered
+          - completed
+          - cancelled
+          position: query
+        requestTemplate:
+          url: http://mock-api:8000/api/v1/orders
+          method: GET
+          security:
+            id: BearerAuth
+        responseTemplate:
+          prependBody: |+
+            # API Response Information
+
+            Below is the response from an API call. To help you understand the data, I've provided:
+
+            1. A detailed description of all fields in the response structure
+            2. The complete API response
+
+            ## Response Structure
+
+            > Content-Type: application/json
+
+            - **items**: 订单摘要列表 (Type: array)
+              - **items[].created_at**: 下单时间 (Type: string)
+              - **items[].customer_id**: 客户编号 (Type: string)
+              - **items[].customer_name**: 客户姓名 (Type: string)
+              - **items[].days_since_delivery**: 已签收的自然日天数 (Type: integer)
+              - **items[].delivered_at**: 签收时间 (Type: string)
+              - **items[].has_open_ticket**: 是否有待处理的售后工单 (Type: boolean)
+              - **items[].order_id**: 订单号 (Type: string)
+              - **items[].refund_status**: 退款进度 (Type: string)
+              - **items[].region**: 订单所属区域 (Type: string)
+              - **items[].status**: 订单状态 (Type: string)
+              - **items[].total_amount**: 订单实付金额（元） (Type: number)
+            - **page**: 当前页码 (Type: integer)
+            - **page_size**: 每页条数 (Type: integer)
+            - **total**: 符合条件且可见的订单总数 (Type: integer)
+
+            ## Original Response
+
+        security:
+          id: BearerAuth
+          passthrough: true
+        outputSchema:
+          description: Successful Response
+          properties:
+            items:
+              description: 订单摘要列表
+              items:
+                properties:
+                  created_at:
+                    description: 下单时间
+                    type: string
+                  customer_id:
+                    description: 客户编号
+                    type: string
+                  customer_name:
+                    description: 客户姓名
+                    type: string
+                  days_since_delivery:
+                    description: 已签收的自然日天数
+                    type: integer
+                  delivered_at:
+                    description: 签收时间
+                    type: string
+                  has_open_ticket:
+                    description: 是否有待处理的售后工单
+                    type: boolean
+                  order_id:
+                    description: 订单号
+                    type: string
+                  refund_status:
+                    description: 退款进度
+                    type: string
+                  region:
+                    description: 订单所属区域
+                    type: string
+                  status:
+                    description: 订单状态
+                    type: string
+                  total_amount:
+                    description: 订单实付金额（元）
+                    type: number
+                required:
+                - order_id
+                - region
+                - status
+                - created_at
+                - total_amount
+                - refund_status
+                - customer_id
+                - customer_name
+                - has_open_ticket
+                type: object
+              type: array
+            page:
+              description: 当前页码
+              type: integer
+            page_size:
+              description: 每页条数
+              type: integer
+            total:
+              description: 符合条件且可见的订单总数
+              type: integer
+          required:
+          - items
+          - total
+          - page
+          - page_size
+          type: object
+      - name: list_refunds
+        description: 查询退款记录（仅主管） - 分页查询当前登录人负责区域内的退款单，可按订单号和退款状态筛选，按创建时间倒序返回。仅主管可用，客服调用返回 403。
+        args:
+        - name: order_id
+          description: 只看某个订单的退款单
+          type: string
+          position: query
+        - name: page
+          description: 页码，从 1 开始，默认 1
+          type: integer
+          position: query
+        - name: page_size
+          description: 每页条数，范围 1–50，默认 20
+          type: integer
+          position: query
+        - name: status
+          description: 退款状态
+          type: string
+          enum:
+          - processing
+          - succeeded
+          - failed
+          position: query
+        requestTemplate:
+          url: http://mock-api:8000/api/v1/refunds
+          method: GET
+          security:
+            id: BearerAuth
+        responseTemplate:
+          prependBody: |+
+            # API Response Information
+
+            Below is the response from an API call. To help you understand the data, I've provided:
+
+            1. A detailed description of all fields in the response structure
+            2. The complete API response
+
+            ## Response Structure
+
+            > Content-Type: application/json
+
+            - **items**: 退款单列表 (Type: array)
+              - **items[].amount**: 退款金额（元） (Type: number)
+              - **items[].completed_at**: 完成时间 (Type: string)
+              - **items[].created_at**: 创建时间 (Type: string)
+              - **items[].created_by**: 操作人的用户标识 (Type: string)
+              - **items[].created_by_role**: 操作人角色 (Type: string)
+              - **items[].order_id**: 所属订单号 (Type: string)
+              - **items[].reason**: 退款说明 (Type: string)
+              - **items[].reason_category**: 退款原因类别 (Type: string)
+              - **items[].refund_id**: 退款单号 (Type: string)
+              - **items[].region**: 所属区域 (Type: string)
+              - **items[].status**: 退款状态 (Type: string)
+              - **items[].ticket_id**: 关联的售后工单号 (Type: string)
+            - **page**: 当前页码 (Type: integer)
+            - **page_size**: 每页条数 (Type: integer)
+            - **total**: 符合条件且可见的退款单总数 (Type: integer)
+
+            ## Original Response
+
+        security:
+          id: BearerAuth
+          passthrough: true
+        outputSchema:
+          description: Successful Response
+          properties:
+            items:
+              description: 退款单列表
+              items:
+                properties:
+                  amount:
+                    description: 退款金额（元）
+                    type: number
+                  completed_at:
+                    description: 完成时间
+                    type: string
+                  created_at:
+                    description: 创建时间
+                    type: string
+                  created_by:
+                    description: 操作人的用户标识
+                    type: string
+                  created_by_role:
+                    description: 操作人角色
+                    type: string
+                  order_id:
+                    description: 所属订单号
+                    type: string
+                  reason:
+                    description: 退款说明
+                    type: string
+                  reason_category:
+                    description: 退款原因类别
+                    type: string
+                  refund_id:
+                    description: 退款单号
+                    type: string
+                  region:
+                    description: 所属区域
+                    type: string
+                  status:
+                    description: 退款状态
+                    type: string
+                  ticket_id:
+                    description: 关联的售后工单号
+                    type: string
+                required:
+                - refund_id
+                - order_id
+                - region
+                - amount
+                - reason_category
+                - reason
+                - status
+                - created_by
+                - created_by_role
+                - created_at
+                type: object
+              type: array
+            page:
+              description: 当前页码
+              type: integer
+            page_size:
+              description: 每页条数
+              type: integer
+            total:
+              description: 符合条件且可见的退款单总数
+              type: integer
+          required:
+          - items
+          - total
+          - page
+          - page_size
+          type: object

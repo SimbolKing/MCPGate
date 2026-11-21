@@ -1,0 +1,41 @@
+id: D-19
+title: 对话查询客户订单列表按身份区域自动过滤
+layer: dialogue
+category: authz
+orders: [A1026, A1030, A1035, B2089]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    conversation: wang_conv
+    query: 客户 C0003 有哪些订单？
+    authz: filter
+    expect:
+      must:
+        not_contains: [B2089]
+      should:
+        trace: {mode: exact, calls: [{tool: list_orders, kind: ok}]}
+        contains_all: [A1026, A1030, A1035]
+
+  - id: t2
+    do: chat
+    as: zhao
+    conversation: zhao_conv
+    query: 客户 C0003 有哪些订单？
+    authz: filter
+    expect:
+      must:
+        not_contains: [A1026, A1030, A1035]
+      should:
+        trace: {mode: exact, calls: [{tool: list_orders, kind: ok}]}
+        contains_all: [B2089]
+
+  - id: t3
+    do: chat
+    as: sun
+    conversation: sun_conv
+    query: 客户 C0003 有哪些订单？
+    expect:
+      should:
+        trace: {mode: exact, calls: [{tool: list_orders, kind: ok}]}
+        contains_all: [A1026, A1030, A1035, B2089]

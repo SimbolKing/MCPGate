@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MCPGate 售后助手</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand">MCPGate 售后助手</div>
+      <a
+        id="approval-link"
+        class="topbar-link hidden"
+        href="http://localhost:8020/console/"
+        target="_blank"
+        rel="noopener noreferrer"
+      >审批控制台 ↗</a>
+    </div>
+    <div class="topbar-right">
+      <span id="user-badge" class="user-badge">未登录</span>
+      <span id="token-countdown" class="countdown-badge hidden"></span>
+      <button id="new-chat-btn" type="button" class="btn btn-sm btn-ghost hidden">新对话</button>
+      <button id="logout-btn" type="button" class="btn btn-sm btn-ghost hidden">退出</button>
+    </div>
+  </header>
+
+  <main class="chat-shell">
+    <section id="messages-area" class="messages-area" aria-live="polite">
+      <div id="empty-state" class="empty-state-card">
+        <h2>欢迎使用 MCPGate 售后助手</h2>
+        <p class="muted">
+          可查询本人负责区域的订单、咨询售后制度条款、提交退款申请（需主管审批）以及查询退款审批进度。
+        </p>
+        <div class="quick-prompts">
+          <button type="button" class="prompt-chip" data-prompt="订单 A1023 的客户要退货，能退吗？">
+            订单 A1023 的客户要退货，能退吗？
+          </button>
+          <button type="button" class="prompt-chip" data-prompt="帮我查一下订单 A1023 的退款申请进度。">
+            帮我查一下订单 A1023 的退款申请进度。
+          </button>
+          <button type="button" class="prompt-chip" data-prompt="质量问题退货的期限是多少天？运费谁出？">
+            质量问题退货的期限是多少天？运费谁出？
+          </button>
+        </div>
+      </div>
+      <div id="messages-list" class="messages-list"></div>
+    </section>
+
+    <section class="composer-wrap">
+      <form id="composer-form" class="composer-form">
+        <div class="composer-input-row">
+          <textarea
+            id="query-input"
+            rows="2"
+            maxlength="2000"
+            placeholder="请输入问题或订单号（Enter 发送，Shift+Enter 换行）"
+          ></textarea>
+          <button id="send-btn" type="submit" class="btn btn-primary send-btn">发送</button>
+        </div>
+        <div class="composer-footer">
+          <span id="composer-status" class="muted"></span>
+          <span id="char-count" class="muted">0 / 2000</span>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <div id="login-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="login-title">
+    <div class="modal-card">
+      <h1 id="login-title">登录 MCPGate 售后助手</h1>
+      <p class="login-subtitle">
+        客服与主管均可使用；数据可见范围与功能权限由当前账号的 JWT 声明决定。
+      </p>
+      <div id="login-alert" class="alert hidden"></div>
+
+      <div id="dev-login-section">
+        <form id="dev-login-form">
+          <div class="form-group">
+            <label for="login-username">开发账号（如 wang / zhao / chen / li / zhou / sun）</label>
+            <input id="login-username" type="text" autocomplete="username" required />
+          </div>
+          <div class="form-group">
+            <label for="login-password">密码</label>
+            <input id="login-password" type="password" autocomplete="current-password" required />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">账号密码登录</button>
+        </form>
+        <hr class="divider" />
+      </div>
+
+      <form id="token-form">
+        <div class="form-group">
+          <label for="token-input">或直接粘贴 JWT 令牌</label>
+          <textarea id="token-input" rows="3" placeholder="粘贴 JWT（可带或不带 Bearer 前缀）"></textarea>
+        </div>
+        <button type="submit" class="btn btn-block">使用 JWT 登录</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="/static/chat.js"></script>
+</body>
+</html>

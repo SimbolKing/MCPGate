@@ -1,0 +1,15 @@
+id: D-25
+title: 身份与不存在：过期 token 访问对话入口直接返回 401 且不留审计
+layer: dialogue
+category: identity
+orders: [A1023]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    token: expired
+    query: 订单 A1023 能退吗？
+    expect:
+      http:
+        status: 401
+        code: token_expired

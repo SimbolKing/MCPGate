@@ -1,0 +1,57 @@
+id: D-17
+title: 权限隔离：客服与主管跨区域请求退款在查订单即被拒且无写调用
+layer: dialogue
+category: authz
+orders: [B2087]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    conversation: wang_conv
+    query: 给订单 B2087 退款 100 元。
+    authz: deny
+    target: B2087
+    expect:
+      must:
+        trace_forbid: [{tool: get_order, kind: ok}, {tool: create_refund}]
+      should:
+        trace:
+          mode: exact
+          calls: [{tool: get_order, kind: denied, error_code: order_access_denied}]
+        answer_equals: 你没有权限查看该订单。
+
+  - id: t2
+    do: chat
+    as: li
+    conversation: li_conv
+    query: 给订单 B2087 办理退款。
+    authz: deny
+    target: B2087
+    expect:
+      must:
+        trace_forbid: [{tool: get_order, kind: ok}, {tool: create_refund}]
+      should:
+        trace:
+          mode: exact
+          calls: [{tool: get_order, kind: denied, error_code: order_access_denied}]
+        answer_equals: 你没有权限查看该订单。
+
+  - id: p1
+    do: mcp
+    as: sun
+    severity: must
+    tool: list_approvals
+    args: {order_id: B2087}
+    expect:
+      result: ok
+      data: {total: 0}
+
+  - id: p2
+    do: mcp
+    as: zhao
+    severity: must
+    tool: get_order
+    args: {order_id: B2087}
+    expect:
+      result: ok
+      data: {refunded_amount: 0}

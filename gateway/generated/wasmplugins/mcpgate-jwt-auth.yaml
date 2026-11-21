@@ -1,0 +1,45 @@
+apiVersion: extensions.higress.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: mcpgate-jwt-auth
+  namespace: higress-system
+  creationTimestamp: '2000-01-01T00:00:00Z'
+  resourceVersion: '1'
+spec:
+  url: http://localhost:8002/plugins/jwt-auth/2.0.0/plugin.wasm
+  phase: AUTHN
+  priority: 340
+  failStrategy: FAIL_CLOSE
+  defaultConfigDisable: false
+  defaultConfig:
+    global_auth: false
+    consumers:
+    - name: idp
+      issuer: http://dev-idp:8010
+      jwks: |
+        {
+          "keys": [
+            {
+              "kty": "RSA",
+              "kid": "mcpgate-dev-1",
+              "use": "sig",
+              "alg": "RS256",
+              "n": "tMQ71hmbNrPfVxpUSUFI5-CBUOzhC4FB4r-3bOYRVJRM6XPzR0YimAQBhOKx4zzBOFJaJ-cZ-kEexxB9zijGCPxHASHysEKlHENYm5zBYgGd-M41-cXlROTUbZPiCqNXM-Drcda7y1NATHM2KFwzxg_qKW3RUupQABt6k0DB4shIhueKlwOOZW3e4-hZBK6rbBTXcEcm9P_BhwgZ8dOyzKrafPP_s_-sDnOhJom21wSnxaDesYvPRS5hy5xaBKCSpskgyy_Ohepxm-e_7UJJ_H_NHGUFLNc8bPAD_ltFtqszIv1d5TT4FU6HBNl4JPplSAtWdENd1DD3tqhMltwitw",
+              "e": "AQAB"
+            }
+          ]
+        }
+      claims:
+        aud: mcpgate
+      from_headers:
+      - name: Authorization
+        value_prefix: 'Bearer '
+      clock_skew_seconds: 60
+      keep_token: true
+  matchRules:
+  - ingress:
+    - aftersale-mcp
+    configDisable: false
+    config:
+      allow:
+      - idp

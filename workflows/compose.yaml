@@ -1,0 +1,23 @@
+services:
+  chat:
+    build: ./chat
+    environment:
+      CHAT_DIFY_BASE_URL: ${CHAT_DIFY_BASE_URL:-http://dify.internal}
+      CHAT_DIFY_API_KEY: ${CHAT_DIFY_API_KEY:-}
+      CHAT_DIFY_TIMEOUT_SECONDS: ${CHAT_DIFY_TIMEOUT_SECONDS:-120}
+      CHAT_JWT_ISSUER: ${MCPGATE_JWT_ISSUER:-http://dev-idp:8010}
+      CHAT_JWT_AUDIENCE: ${MCPGATE_JWT_AUDIENCE:-mcpgate}
+      CHAT_JWT_JWKS_URL: ${MCPGATE_JWKS_URL:-http://dev-idp:8010/.well-known/jwks.json}
+      CHAT_JWKS_REFRESH_COOLDOWN_SECONDS: ${CHAT_JWKS_REFRESH_COOLDOWN_SECONDS:-30}
+      CHAT_JWKS_TIMEOUT_SECONDS: ${CHAT_JWKS_TIMEOUT_SECONDS:-5}
+      CHAT_DEV_LOGIN_URL: ${CHAT_DEV_LOGIN_URL:-http://dev-idp:8010/token}
+      CHAT_APPROVAL_CONSOLE_URL: ${CHAT_APPROVAL_CONSOLE_URL:-http://localhost:8020/console/}
+      CHAT_LOG_LEVEL: ${CHAT_LOG_LEVEL:-INFO}
+    ports:
+      - "127.0.0.1:8030:8030"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8030/healthz')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped

@@ -1,0 +1,76 @@
+id: D-20
+title: 主管经助手提交退款申请须回避自批，由其他主管审批后执行
+layer: dialogue
+category: authz
+orders: [A1033]
+steps:
+  - id: t1
+    do: chat
+    as: li
+    query: 给订单 A1033 提交退款申请。
+    save:
+      ap: "trace[?tool=='create_refund'].approval_id | [0]"
+    expect:
+      must:
+        not_contains: [退款已执行, 已退款, 退款成功]
+      should:
+        trace:
+          mode: exact
+          calls:
+            - {tool: get_order, kind: ok, order_id: A1033}
+            - {tool: create_refund, kind: pending}
+        contains_all: [等待主管审批]
+
+  - id: g1
+    do: guard
+    as: li
+    severity: must
+    authz: deny
+    call: approve
+    approval: "${ap}"
+    comment: 同意
+    expect:
+      status: 403
+      error_code: self_approval_forbidden
+
+  - id: p1
+    do: mcp
+    as: sun
+    severity: must
+    tool: get_order
+    args: {order_id: A1033}
+    expect:
+      result: ok
+      data: {refunded_amount: 0}
+
+  - id: g2
+    do: guard
+    as: sun
+    call: approve
+    approval: "${ap}"
+    comment: 复核通过
+    save:
+      rid: data.refund_id
+    expect:
+      status: 200
+      data: {status: executed}
+
+  - id: t2
+    do: chat
+    as: li
+    query: 那笔退款批了吗？
+    expect:
+      should:
+        trace: {mode: exact, calls: [{tool: get_approval, kind: ok}]}
+        contains_all: [退款已执行]
+
+  - id: p2
+    do: mcp
+    as: sun
+    tool: get_refund
+    args: {refund_id: "${rid}"}
+    expect:
+      result: ok
+      data:
+        created_by: u2003
+        created_by_role: supervisor

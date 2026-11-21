@@ -1,0 +1,16 @@
+id: D-24
+title: 身份与不存在：查询不存在的订单 X9999 返回未找到模板
+layer: dialogue
+category: identity
+unknown_ids: [X9999]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    query: 查一下订单 X9999。
+    expect:
+      should:
+        trace:
+          mode: exact
+          calls: [{tool: get_order, kind: not_found, error_code: order_not_found}]
+        contains_all: [没有找到, X9999]

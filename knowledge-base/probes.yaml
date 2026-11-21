@@ -1,0 +1,155 @@
+probes:
+  # 4.7.8 核心示例与 4.7.5 种子订单场景覆盖
+  - id: P01
+    dataset: policy
+    query: 数码家电 质量问题 退货退款 已签收 18 天 普通客户
+    expect:
+      - 售后制度 第 3.2 条
+      - 售后制度 第 2.2 条
+      - 售后制度 第 5.5 条
+  - id: P02
+    dataset: policy
+    query: 服饰鞋包 无理由 退货退款 已签收 7 天 普通客户
+    expect:
+      - 售后制度 第 2.1 条
+  - id: P03
+    dataset: policy
+    query: 服饰鞋包 无理由 已签收 10 天 会员
+    expect:
+      - 售后制度 第 6.1 条
+  - id: P04
+    dataset: policy
+    query: 生鲜食品 质量问题 仅退款 已签收 3 天
+    expect:
+      - 售后制度 第 4.1 条
+  - id: P05
+    dataset: policy
+    query: 已发货未签收 未收到货 发货 9 天
+    expect:
+      - 售后制度 第 3.6 条
+  - id: P06
+    dataset: policy
+    query: 退款金额 5999 元 大额 审批
+    expect:
+      - 售后制度 第 7.3 条
+      - 售后制度 第 7.1 条
+  - id: P07
+    dataset: handbook
+    query: 蓝牙耳机一边没有声音怎么排查
+    expect:
+      - 故障排查手册 第 1.1 条
+  - id: P08
+    dataset: handbook
+    query: 提交退款后怎么查进度
+    expect:
+      - 客服操作手册 第 2.4 条
+
+  # 其余 4.7.5 种子场景与关键制度条款覆盖
+  - id: P09
+    dataset: policy
+    query: 服饰鞋包 无理由 退货退款 已签收 12 天 普通客户
+    expect:
+      - 售后制度 第 2.2 条
+  - id: P10
+    dataset: policy
+    query: 服饰鞋包 无理由 退货退款 已签收 20 天 会员
+    expect:
+      - 售后制度 第 6.1 条
+      - 售后制度 第 2.2 条
+  - id: P11
+    dataset: policy
+    query: 生鲜食品 无理由 仅退款 已签收 2 天
+    expect:
+      - 售后制度 第 4.1 条
+  - id: P12
+    dataset: policy
+    query: 定制商品 无理由 退货退款 已签收 5 天
+    expect:
+      - 售后制度 第 4.2 条
+  - id: P13
+    dataset: policy
+    query: 待支付 已取消 订单状态 可退款项
+    expect:
+      - 售后制度 第 5.1 条
+  - id: P14
+    dataset: policy
+    query: 已支付未发货 仅退款 未发货订单
+    expect:
+      - 售后制度 第 5.2 条
+  - id: P15
+    dataset: policy
+    query: 服饰鞋包 发错货 退货退款 已签收 9 天
+    expect:
+      - 售后制度 第 3.4 条
+      - 售后制度 第 5.5 条
+  - id: P16
+    dataset: policy
+    query: 数码家电 运输破损 退货退款 已签收 2 天
+    expect:
+      - 售后制度 第 3.5 条
+      - 售后制度 第 5.5 条
+  - id: P17
+    dataset: policy
+    query: 生鲜食品 运输破损 仅退款 已签收 1 天
+    expect:
+      - 售后制度 第 4.1 条
+      - 售后制度 第 5.5 条
+  - id: P18
+    dataset: policy
+    query: 家居日用 没有售后工单 已签收 6 天 部分已退 可退金额 300 元
+    expect:
+      - 售后制度 第 8.2 条
+      - 售后制度 第 5.3 条
+  - id: P19
+    dataset: policy
+    query: 已有处理中的退款 已全额退款 待审批 重复提交
+    expect:
+      - 售后制度 第 5.4 条
+  - id: P20
+    dataset: policy
+    query: 交易完成 60 天 已驳回 售后工单 重复受理
+    expect:
+      - 售后制度 第 8.1 条
+  - id: P21
+    dataset: policy
+    query: 已发货未签收 发货 3 天 没有售后工单 跟进物流
+    expect:
+      - 售后制度 第 3.6 条
+      - 售后制度 第 8.2 条
+  - id: P22
+    dataset: policy
+    query: 数码家电 质量问题 已签收 35 天 保修维修
+    expect:
+      - 售后制度 第 3.3 条
+  - id: P23
+    dataset: policy
+    query: 会员 购买生鲜食品 定制商品 无理由退货运费 权益边界
+    expect:
+      - 售后制度 第 6.2 条
+  - id: P24
+    dataset: policy
+    query: 主管 审批本人提交的申请 72 小时 未审批 过期
+    expect:
+      - 售后制度 第 7.2 条
+      - 售后制度 第 7.4 条
+  - id: P25
+    dataset: handbook
+    query: 系统提示没有权限查看该订单或仅主管可用怎么处理
+    expect:
+      - 客服操作手册 第 3.1 条
+  - id: P26
+    dataset: handbook
+    query: 退款申请被主管拒绝或已同意但执行失败后续怎么处理
+    expect:
+      - 客服操作手册 第 2.5 条
+  - id: P27
+    dataset: handbook
+    query: 衣服尺码不合适或者有轻微色差算质量问题吗
+    expect:
+      - 故障排查手册 第 2.2 条
+  - id: P28
+    dataset: handbook
+    query: 进水摔坏等人为损坏算不算质量问题 无法远程判断怎么寄回检测
+    expect:
+      - 故障排查手册 第 4.2 条
+      - 故障排查手册 第 4.3 条

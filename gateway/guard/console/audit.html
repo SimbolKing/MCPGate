@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MCPGate 审计日志</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand">MCPGate 审批与审计控制台</div>
+      <nav class="nav">
+        <a href="./index.html">退款审批</a>
+        <a href="./audit.html" class="active">审计日志</a>
+      </nav>
+    </div>
+    <div class="user-info">
+      <span id="user-badge" class="user-badge">未登录</span>
+      <button id="logout-btn" type="button" class="btn btn-sm btn-ghost hidden">退出</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="login-view" class="card login-wrapper">
+      <h1>登录审计控制台</h1>
+      <p class="login-subtitle">审计日志与审批页共用登录状态，仅主管角色可按负责区域查询。</p>
+      <div id="login-alert" class="alert hidden"></div>
+
+      <div id="dev-login-section">
+        <form id="dev-login-form">
+          <div class="form-group">
+            <label for="login-username">开发账号（如 li / zhou / sun）</label>
+            <input id="login-username" type="text" autocomplete="username" required />
+          </div>
+          <div class="form-group">
+            <label for="login-password">密码</label>
+            <input id="login-password" type="password" autocomplete="current-password" required />
+          </div>
+          <button type="submit" class="btn btn-primary">账号密码登录</button>
+        </form>
+        <hr class="divider" />
+      </div>
+
+      <form id="token-form">
+        <div class="form-group">
+          <label for="token-input">或直接粘贴 JWT 令牌</label>
+          <textarea id="token-input" placeholder="粘贴 JWT（可带或不带 Bearer 前缀）"></textarea>
+        </div>
+        <button type="submit" class="btn">使用 JWT 登录</button>
+      </form>
+    </section>
+
+    <section id="main-view" class="hidden">
+      <div id="role-banner" class="alert hidden"></div>
+
+      <div class="card">
+        <form id="audit-filter-form">
+          <div class="filter-grid">
+            <div>
+              <label for="f-from">开始时间</label>
+              <input id="f-from" type="datetime-local" />
+            </div>
+            <div>
+              <label for="f-to">结束时间</label>
+              <input id="f-to" type="datetime-local" />
+            </div>
+            <div>
+              <label for="f-actor">操作人（sub 或登录名）</label>
+              <input id="f-actor" type="text" placeholder="如 u1001 或 wang" />
+            </div>
+            <div>
+              <label for="f-event-type">事件类型</label>
+              <select id="f-event-type">
+                <option value="">全部</option>
+                <option value="tool_call">工具调用</option>
+                <option value="approval_approve">审批同意</option>
+                <option value="approval_reject">审批拒绝</option>
+                <option value="approval_execute">执行退款</option>
+                <option value="approval_expire">自动过期</option>
+              </select>
+            </div>
+            <div>
+              <label for="f-channel">通道</label>
+              <select id="f-channel">
+                <option value="">全部</option>
+                <option value="agent">助手</option>
+                <option value="console">审批页</option>
+                <option value="system">系统</option>
+              </select>
+            </div>
+            <div>
+              <label for="f-tool">工具</label>
+              <input id="f-tool" type="text" placeholder="如 get_order / create_refund" />
+            </div>
+            <div>
+              <label for="f-outcome">结果</label>
+              <select id="f-outcome">
+                <option value="">全部</option>
+                <option value="success">成功</option>
+                <option value="pending_approval">待审批</option>
+                <option value="access_denied">越权拒绝</option>
+                <option value="not_found">不存在</option>
+                <option value="conflict">冲突</option>
+                <option value="invalid">参数错误</option>
+                <option value="auth_failed">鉴权失败</option>
+                <option value="error">系统错误</option>
+              </select>
+            </div>
+            <div>
+              <label for="f-order-id">订单号</label>
+              <input id="f-order-id" type="text" placeholder="如 A1023" />
+            </div>
+            <div>
+              <label for="f-approval-id">审批单号</label>
+              <input id="f-approval-id" type="text" placeholder="如 AP000001" />
+            </div>
+            <div>
+              <label for="f-request-id">请求 ID</label>
+              <input id="f-request-id" type="text" placeholder="X-Request-Id" />
+            </div>
+          </div>
+
+          <div class="filter-actions">
+            <button type="submit" class="btn btn-primary">查询</button>
+            <button id="denied-shortcut-btn" type="button" class="btn btn-danger">只看越权拒绝</button>
+            <button id="reset-filter-btn" type="button" class="btn">重置筛选</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div id="audit-error" class="alert alert-danger hidden"></div>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>时间</th>
+                <th>操作人（姓名 / 角色 / 区域）</th>
+                <th>通道</th>
+                <th>事件</th>
+                <th>工具</th>
+                <th>订单号</th>
+                <th>结果</th>
+                <th>状态码</th>
+                <th>耗时</th>
+                <th>审批单号</th>
+              </tr>
+            </thead>
+            <tbody id="audit-tbody"></tbody>
+          </table>
+        </div>
+        <div id="audit-empty" class="empty-state hidden">没有匹配的审计记录。</div>
+        <div class="pagination">
+          <span id="audit-page-info">共 0 条</span>
+          <div class="inline-controls">
+            <button id="audit-prev-btn" type="button" class="btn btn-sm">上一页</button>
+            <button id="audit-next-btn" type="button" class="btn btn-sm">下一页</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./audit.js"></script>
+</body>
+</html>

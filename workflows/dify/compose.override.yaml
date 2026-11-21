@@ -1,0 +1,65 @@
+# Dify 1.20.0 覆盖文件（合并在 docker/docker-compose.yaml 之后）
+# 1) 仅将 ssrf_proxy 与 nginx 加入 mcpgate-net；SSRF 仅放行 higress
+# 2) 关闭可选服务 worker_beat / local_sandbox / agent_ssrf_proxy
+# 3) 取消 plugin_daemon 5003 调试端口发布并设置单机资源上限
+
+services:
+  ssrf_proxy:
+    environment:
+      SSRF_PROXY_ALLOW_PRIVATE_DOMAINS: higress
+    networks:
+      mcpgate: {}
+    mem_limit: 256m
+
+  nginx:
+    networks:
+      default: {}
+      mcpgate:
+        aliases:
+          - dify.internal
+    mem_limit: 64m
+
+  plugin_daemon:
+    ports: !override []
+    mem_limit: 1g
+    cpus: 1.5
+
+  worker_beat:
+    profiles: [mcpgate-off]
+
+  local_sandbox:
+    profiles: [mcpgate-off]
+
+  agent_ssrf_proxy:
+    profiles: [mcpgate-off]
+
+  api:
+    mem_limit: 1g
+    cpus: 1.5
+
+  worker:
+    mem_limit: 1g
+    cpus: 1.5
+
+  web:
+    mem_limit: 512m
+
+  db_postgres:
+    mem_limit: 512m
+
+  redis:
+    mem_limit: 128m
+
+  sandbox:
+    mem_limit: 256m
+
+  weaviate:
+    mem_limit: 512m
+
+  agent_backend:
+    mem_limit: 512m
+
+networks:
+  mcpgate:
+    name: mcpgate-net
+    external: true

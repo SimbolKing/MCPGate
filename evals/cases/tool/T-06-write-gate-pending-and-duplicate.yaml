@@ -1,0 +1,85 @@
+id: T-06
+title: 客服与主管写调用均被拦为待审批且重复提交被 409 拒绝
+layer: tool
+category: write-gate
+orders: [A1024, A1033]
+steps:
+  - id: s1
+    do: mcp
+    as: wang
+    tool: create_refund
+    args:
+      order_id: A1024
+      amount: 899
+      reason_category: no_reason
+      reason: 评测用例 T-06
+      ticket_id: T5002
+    save:
+      ap1: data.approval_id
+    expect:
+      result: pending
+      data:
+        approval_id: AP000001
+        status: pending
+        applicant_sub: u1001
+      message_contains: [等待主管审批]
+
+  - id: s2
+    do: mcp
+    as: li
+    tool: create_refund
+    args:
+      order_id: A1033
+      amount: 5999
+      reason_category: quality_issue
+      reason: 评测用例 T-06
+      ticket_id: T5008
+    save:
+      ap2: data.approval_id
+    expect:
+      result: pending
+      data:
+        approval_id: AP000002
+        status: pending
+        applicant_sub: u2001
+      message_contains: [等待主管审批]
+
+  - id: s3
+    do: mcp
+    as: wang
+    tool: create_refund
+    args:
+      order_id: A1024
+      amount: 899
+      reason_category: no_reason
+      reason: 评测用例 T-06
+      ticket_id: T5002
+    expect:
+      result: conflict
+      status: 409
+      error_code: approval_pending_exists
+      message_contains: ["${ap1}"]
+
+  - id: p1
+    do: mcp
+    as: li
+    tool: get_order
+    args: {order_id: A1024}
+    expect:
+      result: ok
+      data:
+        refunded_amount: 0
+        "length(refunds)": 0
+        "after_sale_tickets[?ticket_id=='T5002'].status | [0]": open
+
+  - id: p2
+    do: mcp
+    as: li
+    tool: get_order
+    args: {order_id: A1033}
+    expect:
+      result: ok
+      data:
+        refunded_amount: 0
+        "length(refunds)": 0
+        "after_sale_tickets[?ticket_id=='T5008'].status | [0]": open

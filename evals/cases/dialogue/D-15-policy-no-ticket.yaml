@@ -1,0 +1,16 @@
+id: D-15
+title: 制度场景：没有售后工单需先向客户确认原因（A1031）
+layer: dialogue
+category: policy
+orders: [A1031]
+steps:
+  - id: t1
+    do: chat
+    as: wang
+    query: 订单 A1031 能退吗？
+    expect:
+      should:
+        trace: {mode: exact, calls: [{tool: get_order, kind: ok, order_id: A1031}]}
+        verdict: need_info
+        clauses: [{doc: 售后制度, clause: "8.2"}]
+        citations: [{doc: 售后制度, clause: "8.2"}]

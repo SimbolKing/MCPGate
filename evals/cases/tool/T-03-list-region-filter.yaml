@@ -1,0 +1,84 @@
+id: T-03
+title: 订单列表与退款列表按角色区域自动过滤
+layer: tool
+category: isolation
+orders: [A1026, A1030, A1035, B2089]
+steps:
+  - id: s1
+    do: mcp
+    as: wang
+    tool: list_orders
+    args: {customer_id: C0003}
+    authz: filter
+    expect:
+      result: ok
+      data:
+        total: 3
+        "sort(items[].order_id)": [A1026, A1030, A1035]
+
+  - id: s2
+    do: mcp
+    as: zhao
+    tool: list_orders
+    args: {customer_id: C0003}
+    authz: filter
+    expect:
+      result: ok
+      data:
+        total: 1
+        "sort(items[].order_id)": [B2089]
+
+  - id: s3
+    do: mcp
+    as: chen
+    tool: list_orders
+    args: {customer_id: C0003}
+    authz: filter
+    expect:
+      result: ok
+      data:
+        total: 0
+        "sort(items[].order_id)": []
+
+  - id: s4
+    do: mcp
+    as: sun
+    tool: list_orders
+    args: {customer_id: C0003}
+    expect:
+      result: ok
+      data:
+        total: 4
+        "sort(items[].order_id)": [A1026, A1030, A1035, B2089]
+
+  - id: s5
+    do: mcp
+    as: li
+    tool: list_refunds
+    args: {}
+    authz: filter
+    expect:
+      result: ok
+      data:
+        "sort(items[].refund_id)": [R000101, R000102, R000103]
+
+  - id: s6
+    do: mcp
+    as: zhou
+    tool: list_refunds
+    args: {}
+    authz: filter
+    expect:
+      result: ok
+      data:
+        "sort(items[].refund_id)": [R000104]
+
+  - id: s7
+    do: mcp
+    as: sun
+    tool: list_refunds
+    args: {}
+    expect:
+      result: ok
+      data:
+        "sort(items[].refund_id)": [R000101, R000102, R000103, R000104]

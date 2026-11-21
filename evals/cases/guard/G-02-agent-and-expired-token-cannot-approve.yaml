@@ -1,0 +1,83 @@
+id: G-02
+title: 客服不能审批或拒绝，过期主管 token 审批被 401 拒绝且不留审计
+layer: guard
+category: approval
+orders: [A1023]
+steps:
+  - id: s1
+    do: mcp
+    as: wang
+    tool: create_refund
+    args:
+      order_id: A1023
+      amount: 299
+      reason_category: quality_issue
+      reason: 评测用例 G-02
+      ticket_id: T5001
+    save:
+      ap: data.approval_id
+    expect:
+      result: pending
+      data: {status: pending}
+
+  - id: s2
+    do: guard
+    as: wang
+    call: approve
+    approval: "${ap}"
+    comment: 同意
+    authz: deny
+    expect:
+      status: 403
+      error_code: insufficient_role
+
+  - id: s3
+    do: guard
+    as: zhao
+    call: approve
+    approval: "${ap}"
+    comment: 同意
+    authz: deny
+    expect:
+      status: 403
+      error_code: insufficient_role
+
+  - id: s4
+    do: guard
+    as: wang
+    call: reject
+    approval: "${ap}"
+    comment: 拒绝
+    authz: deny
+    expect:
+      status: 403
+      error_code: insufficient_role
+
+  - id: s5
+    do: guard
+    as: li
+    token: expired
+    call: approve
+    approval: "${ap}"
+    comment: 同意
+    expect:
+      status: 401
+      error_code: token_expired
+
+  - id: p1
+    do: mcp
+    as: li
+    tool: get_approval
+    args: {approval_id: "${ap}"}
+    expect:
+      result: ok
+      data: {status: pending}
+
+  - id: p2
+    do: mcp
+    as: li
+    tool: get_order
+    args: {order_id: A1023}
+    expect:
+      result: ok
+      data: {refunded_amount: 0}

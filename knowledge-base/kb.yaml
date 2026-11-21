@@ -1,0 +1,31 @@
+datasets:
+  - key: policy
+    name: 售后制度
+    documents:
+      - docs/policy/售后制度.md
+  - key: handbook
+    name: 客服手册
+    documents:
+      - docs/handbook/客服操作手册.md
+      - docs/handbook/故障排查手册.md
+indexing:
+  indexing_technique: high_quality
+  doc_form: text_model
+  doc_language: Chinese
+  process_rule:
+    mode: custom
+    rules:
+      pre_processing_rules:
+        - id: remove_extra_spaces
+          enabled: true
+        - id: remove_urls_emails
+          enabled: false
+      segmentation:
+        separator: "\n\n"
+        max_tokens: 1000
+        chunk_overlap: 0
+retrieval_model:
+  search_method: semantic_search
+  reranking_enable: false
+  top_k: 8
+  score_threshold_enabled: false
